@@ -30,8 +30,17 @@ nonisolated struct FileSystemStore: Sendable {
             .appendingPathComponent("Visor", isDirectory: true)
             .appendingPathComponent("sessions", isDirectory: true)
             .appendingPathComponent(sessionId.uuidString, isDirectory: true)
-        // 容错：目录已存在不报错
-        try? fm.createDirectory(at: base, withIntermediateDirectories: true)
+
+        // 如果 base 路径上存在一个文件（而非目录），先删除它
+        // 否则 createDirectory 会因"同名文件已存在"而失败（Code=516）
+        var isDir: ObjCBool = false
+        if fm.fileExists(atPath: base.path, isDirectory: &isDir) {
+            if !isDir.boolValue {
+                // 是文件不是目录，删除后重建
+                try? fm.removeItem(at: base)
+            }
+        }
+        try fm.createDirectory(at: base, withIntermediateDirectories: true)
         self.rootURL = base
     }
 
@@ -60,12 +69,11 @@ nonisolated struct FileSystemStore: Sendable {
         let tempURL = url.appendingPathExtension("tmp-\(UUID().uuidString.prefix(8))")
         do {
             try content.write(to: tempURL, atomically: true, encoding: .utf8)
-            // 覆盖：先删再 move（保证原子性）
+            // 覆盖：先删目标（如果存在），再 move（保证原子性）
             if FileManager.default.fileExists(atPath: url.path) {
-                _ = try FileManager.default.replaceItemAt(url, withItemAt: tempURL)
-            } else {
-                try FileManager.default.moveItem(at: tempURL, to: url)
+                try FileManager.default.removeItem(at: url)
             }
+            try FileManager.default.moveItem(at: tempURL, to: url)
         } catch {
             // 清理临时文件
             try? FileManager.default.removeItem(at: tempURL)

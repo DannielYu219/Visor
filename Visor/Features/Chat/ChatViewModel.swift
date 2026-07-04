@@ -212,7 +212,17 @@ final class ChatViewModel {
                 name: msg.name
             )
             messages.append(toolMsg)
-            DebugBus.shared.tool(msg.name ?? "?", args: "", result: msg.content ?? "")
+            // 从上一条 assistant 的 toolCallBody 里查找对应 toolCallId 的 arguments
+            var argsForDebug = ""
+            if let tid = msg.toolCallId,
+               let lastAssistant = messages.last(where: { $0.role == "assistant" && $0.toolCallBody != nil }),
+               let data = lastAssistant.toolCallBody?.data(using: .utf8),
+               let calls = try? JSONDecoder().decode([ToolCall].self, from: data) {
+                if let match = calls.first(where: { $0.id == tid }) {
+                    argsForDebug = match.function.arguments
+                }
+            }
+            DebugBus.shared.tool(msg.name ?? "?", args: argsForDebug, result: msg.content ?? "")
             // 新建 assistant 占位
             let placeholder = ChatMessage(role: "assistant", content: "", isStreaming: true)
             messages.append(placeholder)
