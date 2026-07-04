@@ -1,0 +1,37 @@
+import Foundation
+
+/// Wireframe Skill（快速线框图）
+struct WireframeSkill: Skill {
+    let name = "wireframe"
+    let displayName = "线框图"
+    let skillDescription = "快速探索多个粗糙方案，不追求精致"
+
+    let systemPromptFragment = """
+    # Wireframe
+
+    你正在**快速探索**设计空间 — 不是做出一个完美方案。
+
+    ## 流程
+    1. 生成 **3 个不同方向** 的线框图（如有空间）
+    2. 每个方案用独立 ```html ... ``` 围栏包裹
+    3. 每个方案前用 `<!-- VARIANT 1: <name> -->` 注释
+
+    ## 风格
+    - 黑白灰为主；无装饰
+    - 占位符用 ▢ ▭ ▮ 等 unicode 方块
+    - 文字用真实内容（非 Lorem）
+    - 注释每段意图（如 `<!-- header: logo + nav + CTA -->`）
+
+    ## 输出
+    - 3 个变体连续输出在一个回答里
+    - 末尾加一段 50 字的"取舍建议"
+    """
+
+    func matches(_ userInput: String) -> Bool {
+        let keywords = [
+            "线框", "wireframe", "草图", "草图", "方案", "探索",
+            "几个版本", "多个方向", "sketch", "rough"
+        ]
+        return defaultMatches(keywords, in: userInput)
+    }
+}

@@ -1,0 +1,30 @@
+# Build artifacts
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# CocoaPods (not used yet, but guard)
+Pods/
+
+# Logs
+*.log
+
+# Trae IDE
+.trae/

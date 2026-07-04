@@ -1,0 +1,281 @@
+import Foundation
+import os.log
+
+/// Agent 运行时（2026-07-04 v7）
+///
+/// 关键修复：
+/// - nonisolated（不阻塞 MainActor）
+/// - Task.detached
+/// - defer { continuation.finish() }
+/// - tool_call delta 实时透传
+/// - build() 不要求 id 非空
+/// - 执行前验证 arguments JSON
+/// - 流式 watchdog：120 秒无 delta → 超时
+/// - .log 事件：全链路诊断日志通过事件流发到 DebugBus
+final class AgentRuntime: @unchecked Sendable {
+    private let provider: ModelProvider
+    private let router: SkillRouter
+    private let maxToolRounds = 6
+    private var currentTask: Task<Void, Never>?
+    private let logger = Logger(subsystem: "com.lyrastudio.Visor", category: "AgentRuntime")
+
+    enum Event: Sendable {
+        case skillRouted(String)
+        case reasoningDelta(String)
+        case textDelta(String)
+        case toolCallStarted(name: String)
+        case assistantMessage(Message)
+        case toolMessage(Message)
+        case usage(prompt: Int, completion: Int, costUSD: Double)
+        case artifact(path: String)
+        case error(String)
+        case log(String)          // 诊断日志（发到 DebugBus）
+        case completed
+    }
+
+    init(provider: ModelProvider? = nil, router: SkillRouter? = nil) {
+        self.provider = provider ?? OpenRouterClient()
+        self.router = router ?? SkillRouter(skills: SkillRouter.default)
+    }
+
+    func run(userInput: String, history: [Message], modelId: String, sessionId: UUID) -> AsyncStream<Event> {
+        currentTask?.cancel()
+        let (stream, continuation) = AsyncStream<Event>.makeStream()
+
+        currentTask = Task.detached {
+            defer { continuation.finish() }
+            await self.runInternal(userInput: userInput, history: history, modelId: modelId, sessionId: sessionId, continuation: continuation)
+        }
+        continuation.onTermination = { @Sendable _ in
+            self.currentTask?.cancel()
+        }
+        return stream
+    }
+
+    func cancel() {
+        currentTask?.cancel()
+        if let p = provider as? OpenRouterClient { p.cancel() }
+    }
+
+    private func log(_ continuation: AsyncStream<Event>.Continuation, _ msg: String) {
+        logger.info("\(msg)")
+        continuation.yield(.log(msg))
+    }
+
+    // MARK: - Core Loop
+
+    private func runInternal(
+        userInput: String,
+        history: [Message],
+        modelId: String,
+        sessionId: UUID,
+        continuation: AsyncStream<Event>.Continuation
+    ) async {
+        log(continuation, "▶ runInternal start")
+
+        let fs: FileSystemStore
+        do {
+            fs = try FileSystemStore(sessionId: sessionId)
+            log(continuation, "✓ FileSystemStore ok")
+        } catch {
+            log(continuation, "✗ FileSystemStore failed: \(error)")
+            continuation.yield(.error("文件系统初始化失败：\(error.localizedDescription)"))
+            return
+        }
+
+        let routed = self.router.route(userInput)
+        continuation.yield(.skillRouted(routed.primary.displayName))
+        log(continuation, "✓ routed to \(routed.primary.name)")
+
+        let combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLISkillFragment
+        let userMsgWithHint = userInput + "\n\n[系统提示] 请先用 1-2 句中文告诉用户你打算做什么，然后再调用工具。"
+        var messages: [Message] = [.system(combinedSystemPrompt)]
+        messages.append(contentsOf: history)
+        messages.append(.user(userMsgWithHint))
+        log(continuation, "✓ messages count: \(messages.count)")
+
+        for round in 1...maxToolRounds {
+            if Task.isCancelled {
+                log(continuation, "✗ cancelled before round \(round)")
+                return
+            }
+            log(continuation, "▶ round \(round) start")
+
+            let stream = self.provider.stream(messages: messages, tools: FileTools.all, modelId: modelId)
+
+            var textAccum = ""
+            var toolFragments: [Int: ToolCallBuilder] = [:]
+            var finishReason: String?
+            var lastUsage: StreamDelta.Usage?
+            var toolCallNotified: Set<Int> = []
+            var deltaCount = 0
+
+            // watchdog：用 Task 监控无数据超时
+            let watchdog = Task {
+                try? await Task.sleep(nanoseconds: 120_000_000_000) // 120 秒
+                if !Task.isCancelled {
+                    log(continuation, "✗ watchdog: 120 秒无新 delta，可能卡死")
+                }
+            }
+
+            do {
+                for try await delta in stream {
+                    watchdog.cancel()
+                    if Task.isCancelled {
+                        log(continuation, "✗ cancelled during stream")
+                        return
+                    }
+                    deltaCount += 1
+
+                    if let r = delta.reasoningDelta {
+                        continuation.yield(.reasoningDelta(r))
+                    }
+                    if let text = delta.contentDelta {
+                        textAccum += text
+                        continuation.yield(.textDelta(text))
+                    }
+                    if let tcds = delta.toolCallDeltas {
+                        for tcd in tcds {
+                            var b = toolFragments[tcd.index] ?? ToolCallBuilder()
+                            if let id = tcd.id { b.id = id }
+                            if let type = tcd.type { b.type = type }
+                            if let name = tcd.functionName { b.name += name }
+                            if let args = tcd.argumentsDelta { b.arguments += args }
+                            toolFragments[tcd.index] = b
+
+                            if !toolCallNotified.contains(tcd.index) && !b.name.isEmpty {
+                                toolCallNotified.insert(tcd.index)
+                                continuation.yield(.toolCallStarted(name: b.name))
+                                log(continuation, "⚡ tool_call detected: \(b.name), argsLen=\(b.arguments.count)")
+                            }
+                        }
+                    }
+                    if let fr = delta.finishReason { finishReason = fr }
+                    if let u = delta.usage { lastUsage = u }
+
+                    // 重启 watchdog
+                    if deltaCount % 100 == 0 {
+                        log(continuation, "  ... \(deltaCount) deltas received, textLen=\(textAccum.count), tools=\(toolFragments.count)")
+                    }
+                }
+            } catch {
+                watchdog.cancel()
+                log(continuation, "✗ stream error: \(error)")
+                continuation.yield(.error("流式响应异常：\(error.localizedDescription)"))
+                return
+            }
+            watchdog.cancel()
+
+            log(continuation, "✓ round \(round) stream ended: \(deltaCount) deltas, finishReason=\(finishReason ?? "nil"), textLen=\(textAccum.count), tools=\(toolFragments.count)")
+
+            // 打印每个 tool fragment 的状态
+            for (idx, frag) in toolFragments {
+                log(continuation, "  tool[\(idx)]: id=\(frag.id.isEmpty ? "EMPTY" : frag.id.prefix(20)), name=\(frag.name), argsLen=\(frag.arguments.count), argsValid=\(isValidJSON(frag.arguments))")
+            }
+
+            if let u = lastUsage {
+                let cost = ModelPricingTable.shared.costUSD(modelId: modelId, inputTokens: u.promptTokens, outputTokens: u.completionTokens)
+                continuation.yield(.usage(prompt: u.promptTokens, completion: u.completionTokens, costUSD: cost))
+                log(continuation, "✓ usage: prompt=\(u.promptTokens) completion=\(u.completionTokens) cost=\(cost)")
+            } else {
+                log(continuation, "⚠ no usage received")
+            }
+
+            if finishReason == "error" {
+                continuation.yield(.error("模型返回 finish_reason=error"))
+                return
+            }
+
+            let toolCalls: [ToolCall] = toolFragments.sorted { $0.key < $1.key }.compactMap { $0.value.build() }
+            log(continuation, "✓ built \(toolCalls.count) tool calls")
+
+            if toolCalls.isEmpty {
+                log(continuation, "✓ no tool calls, breaking")
+                break
+            }
+
+            // 验证 arguments JSON
+            var validToolCalls: [ToolCall] = []
+            for tc in toolCalls {
+                if isValidJSON(tc.function.arguments) {
+                    validToolCalls.append(tc)
+                    log(continuation, "✓ tool_call \(tc.function.name) args valid (\(tc.function.arguments.count) chars)")
+                } else {
+                    log(continuation, "✗ tool_call \(tc.function.name) args INVALID: \(tc.function.arguments.prefix(200))")
+                }
+            }
+
+            if validToolCalls.isEmpty {
+                log(continuation, "✗ all tool calls invalid, breaking")
+                break
+            }
+
+            let assistantMsg = Message.assistant(textAccum.isEmpty ? nil : textAccum, toolCalls: validToolCalls)
+            messages.append(assistantMsg)
+            continuation.yield(.assistantMessage(assistantMsg))
+            log(continuation, "✓ assistant message yielded")
+
+            // 执行工具
+            for tc in validToolCalls {
+                log(continuation, "▶ executing \(tc.function.name)...")
+                let result = FileTools.execute(name: tc.function.name, argumentsJSON: tc.function.arguments, fs: fs, sessionId: sessionId)
+                log(continuation, "✓ tool result: \(result.prefix(200))")
+                let toolMsg = Message(role: "tool", content: result, toolCallId: tc.id, name: tc.function.name)
+                messages.append(toolMsg)
+                continuation.yield(.toolMessage(toolMsg))
+            }
+
+            // 通知画布
+            if fs.exists("index.html") {
+                if let absPath = try? fs.absoluteURL(for: "index.html").path {
+                    continuation.yield(.artifact(path: absPath))
+                }
+            }
+
+            log(continuation, "▶ round \(round) done, continuing to round \(round + 1)")
+        }
+
+        log(continuation, "✓ runInternal completed")
+        continuation.yield(.completed)
+    }
+
+    private func isValidJSON(_ s: String) -> Bool {
+        guard let data = s.data(using: .utf8) else { return false }
+        return (try? JSONSerialization.jsonObject(with: data)) != nil
+    }
+
+    private struct ToolCallBuilder {
+        var id: String = ""
+        var type: String = ""
+        var name: String = ""
+        var arguments: String = ""
+
+        func build() -> ToolCall? {
+            guard !name.isEmpty else { return nil }
+            let finalId = id.isEmpty ? "call_\(UUID().uuidString.prefix(8))" : id
+            return ToolCall(id: finalId, type: type.isEmpty ? "function" : type, function: .init(name: name, arguments: arguments))
+        }
+    }
+}
+
+private let visorCLISkillFragment: String = """
+## visor-cli
+
+你是一个面向设计稿的 Agent。当用户让你设计 HTML / 写 CSS / 改样式时：
+
+### 强制工作流
+1. **先说话**：用 1-2 句中文告诉用户你打算做什么
+2. **再调用工具**：调用 `file_write` 把文件落到工作目录
+3. **最后总结**：工具返回后，用 1-2 句中文总结
+
+### 工具
+- `file_write`：参数 `path`（相对路径如 `index.html`）+ `content`（文件内容）
+
+### 文件组织
+画布自动读取 `index.html` 并实时刷新。按文件组织：
+```
+index.html
+assets/style.css
+assets/app.js
+```
+"""
