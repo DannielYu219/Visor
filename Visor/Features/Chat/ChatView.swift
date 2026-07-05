@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import os.log
 
 /// 聊天会话视图（中栏）
@@ -9,6 +10,7 @@ struct DesignSessionView: View {
     @ObservedObject var budgetGuard: BudgetGuard
     let sessionId: UUID
     @State private var canvasPath: String = ""
+    @Environment(\.modelContext) private var modelContext
 
     init(budgetGuard: BudgetGuard, sessionId: UUID) {
         self.budgetGuard = budgetGuard
@@ -35,7 +37,7 @@ struct DesignSessionView: View {
             )
         }
         .background(Color.visorBackground)
-        .onAppear { viewModel.attachSession(sessionId) }
+        .onAppear { viewModel.attachSession(sessionId, context: modelContext) }
         .onChange(of: viewModel.canvasPath) { _, new in
             canvasPath = new
         }

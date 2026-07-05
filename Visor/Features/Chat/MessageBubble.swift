@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 消息气泡（2026-07-04 v4：加 reasoning 折叠）
+/// 消息气泡（2026-07-04 v5：Markdown 渲染 + 字号/行距优化）
 struct MessageBubble: View {
     let message: ChatMessage
     @State private var reasoningExpanded: Bool = false
@@ -30,14 +30,7 @@ struct MessageBubble: View {
                 }
                 // 正文
                 if !message.content.isEmpty || message.isStreaming {
-                    Text(message.content.isEmpty && message.isStreaming ? " " : message.content)
-                        .font(.visorBodyLarge)
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.leading)
-                        .textSelection(.enabled)
-                        .padding(.horizontal, DesignTokens.Spacing.l)
-                        .padding(.vertical, DesignTokens.Spacing.m)
-                        .glassBackground(corner: DesignTokens.Radius.m)
+                    contentView
                 }
             }
 
@@ -53,6 +46,27 @@ struct MessageBubble: View {
                 }
             }
             .padding(.horizontal, DesignTokens.Spacing.s)
+        }
+    }
+
+    /// 正文内容：assistant 用 Markdown 渲染，user 用纯文本
+    @ViewBuilder
+    private var contentView: some View {
+        let displayText = message.content.isEmpty && message.isStreaming ? " " : message.content
+        if message.role == "user" {
+            Text(displayText)
+                .font(.visorBodyLarge)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .textSelection(.enabled)
+                .padding(.horizontal, DesignTokens.Spacing.l)
+                .padding(.vertical, DesignTokens.Spacing.m)
+                .glassBackground(corner: DesignTokens.Radius.m)
+        } else {
+            MarkdownView(text: displayText)
+                .padding(.horizontal, DesignTokens.Spacing.l)
+                .padding(.vertical, DesignTokens.Spacing.m)
+                .glassBackground(corner: DesignTokens.Radius.m)
         }
     }
 
@@ -129,6 +143,226 @@ struct MessageBubble: View {
     private func formatToolResult(_ raw: String) -> String {
         if raw.count <= 200 { return raw }
         return String(raw.prefix(200)) + "…"
+    }
+}
+
+/// Markdown 渲染视图
+/// 使用 AttributedString 解析 Markdown，支持标题/粗体/斜体/代码块/列表/链接
+struct MarkdownView: View {
+    let text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                renderBlock(block)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .textSelection(.enabled)
+    }
+
+    // MARK: - Block 解析
+
+    private enum Block {
+        case heading(level: Int, content: String)
+        case paragraph(String)
+        case codeBlock(language: String?, content: String)
+        case listItem(String, ordered: Bool, index: Int)
+        case blockquote(String)
+        case thematicBreak
+        case blank
+    }
+
+    private var blocks: [Block] {
+        parseBlocks(text)
+    }
+
+    private func parseBlocks(_ source: String) -> [Block] {
+        var result: [Block] = []
+        let lines = source.components(separatedBy: "\n")
+        var i = 0
+        var orderedIndex = 0
+
+        while i < lines.count {
+            let line = lines[i]
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            // 空行
+            if trimmed.isEmpty {
+                result.append(.blank)
+                orderedIndex = 0
+                i += 1
+                continue
+            }
+
+            // 代码块 ```
+            if trimmed.hasPrefix("```") {
+                let lang = String(trimmed.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                var codeLines: [String] = []
+                i += 1
+                while i < lines.count && !lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+                    codeLines.append(lines[i])
+                    i += 1
+                }
+                if i < lines.count { i += 1 } // 跳过结束的 ```
+                result.append(.codeBlock(language: lang.isEmpty ? nil : lang, content: codeLines.joined(separator: "\n")))
+                orderedIndex = 0
+                continue
+            }
+
+            // 分隔线
+            if trimmed == "---" || trimmed == "***" || trimmed == "___" {
+                result.append(.thematicBreak)
+                orderedIndex = 0
+                i += 1
+                continue
+            }
+
+            // 标题
+            if let level = headingLevel(trimmed) {
+                let content = trimmed.replacingOccurrences(of: "^#{1,6}\\s*", with: "", options: .regularExpression)
+                result.append(.heading(level: level, content: content))
+                orderedIndex = 0
+                i += 1
+                continue
+            }
+
+            // 引用
+            if trimmed.hasPrefix(">") {
+                let content = trimmed.replacingOccurrences(of: "^>\\s*", with: "", options: .regularExpression)
+                result.append(.blockquote(content))
+                orderedIndex = 0
+                i += 1
+                continue
+            }
+
+            // 有序列表
+            if let match = trimmed.range(of: "^\\d+\\.\\s", options: .regularExpression) {
+                let content = String(trimmed[match.upperBound...])
+                orderedIndex += 1
+                result.append(.listItem(content, ordered: true, index: orderedIndex))
+                i += 1
+                continue
+            }
+
+            // 无序列表
+            if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") || trimmed.hasPrefix("+ ") {
+                let content = String(trimmed.dropFirst(2))
+                result.append(.listItem(content, ordered: false, index: 0))
+                orderedIndex = 0
+                i += 1
+                continue
+            }
+
+            // 普通段落
+            result.append(.paragraph(trimmed))
+            orderedIndex = 0
+            i += 1
+        }
+
+        return result
+    }
+
+    private func headingLevel(_ line: String) -> Int? {
+        var count = 0
+        for ch in line {
+            if ch == "#" { count += 1 } else { break }
+        }
+        if count > 0 && count <= 6 && line.count > count && line[line.index(line.startIndex, offsetBy: count)] == " " {
+            return count
+        }
+        return nil
+    }
+
+    // MARK: - Block 渲染
+
+    @ViewBuilder
+    private func renderBlock(_ block: Block) -> some View {
+        switch block {
+        case .heading(let level, let content):
+            headingView(level: level, content: content)
+
+        case .paragraph(let content):
+            inlineText(content)
+                .font(.visorBodyLarge)
+                .lineSpacing(4)
+
+        case .codeBlock(_, let content):
+            Text(content)
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, DesignTokens.Spacing.m)
+                .padding(.vertical, DesignTokens.Spacing.s)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.visorTertiaryBackground.opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+        case .listItem(let content, let ordered, let index):
+            HStack(alignment: .top, spacing: 6) {
+                if ordered {
+                    Text("\(index).")
+                        .font(.visorBodyLarge)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("•")
+                        .font(.visorBodyLarge)
+                        .foregroundStyle(.secondary)
+                }
+                inlineText(content)
+                    .font(.visorBodyLarge)
+                    .lineSpacing(4)
+            }
+
+        case .blockquote(let content):
+            HStack(alignment: .top, spacing: 8) {
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.4))
+                    .frame(width: 3)
+                inlineText(content)
+                    .font(.visorBodyLarge)
+                    .foregroundStyle(.secondary)
+                    .lineSpacing(4)
+            }
+
+        case .thematicBreak:
+            Rectangle()
+                .fill(Color.secondary.opacity(0.2))
+                .frame(height: 1)
+
+        case .blank:
+            Color.clear.frame(height: 4)
+        }
+    }
+
+    @ViewBuilder
+    private func headingView(level: Int, content: String) -> some View {
+        let font: Font = {
+            switch level {
+            case 1: return .system(size: 22, weight: .bold)
+            case 2: return .system(size: 20, weight: .bold)
+            case 3: return .system(size: 18, weight: .semibold)
+            case 4: return .system(size: 17, weight: .semibold)
+            case 5: return .system(size: 16, weight: .semibold)
+            default: return .visorBodyLarge
+            }
+        }()
+        Text(inlineAttributed(content))
+            .font(font)
+            .lineSpacing(2)
+    }
+
+    // MARK: - Inline 渲染
+
+    /// 行内 Markdown：用 AttributedString 解析（支持 **bold** / *italic* / `code` / [link](url)）
+    private func inlineText(_ s: String) -> some View {
+        Text(inlineAttributed(s))
+    }
+
+    private func inlineAttributed(_ s: String) -> AttributedString {
+        if let attr = try? AttributedString(markdown: s) {
+            return attr
+        }
+        return AttributedString(s)
     }
 }
 

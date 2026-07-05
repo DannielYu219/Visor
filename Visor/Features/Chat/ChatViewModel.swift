@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SwiftData
 import os.log
 
 /// 单条消息的运行时模型（UI 层使用）
@@ -71,14 +72,100 @@ final class ChatViewModel {
     private var sessionId: UUID = UUID()
     private var consumeTask: Task<Void, Never>?
     private var currentAssistantId: UUID?
+    private var modelContext: ModelContext?
+    /// 流式过程中累积的 reasoning，落盘时用
+    private var streamingReasoning: String = ""
 
     init(runtime: AgentRuntime? = nil, budgetGuard: BudgetGuard) {
         self.runtime = runtime ?? AgentRuntime()
         self.budgetGuard = budgetGuard
     }
 
-    func attachSession(_ id: UUID) {
+    func attachSession(_ id: UUID, context: ModelContext? = nil) {
         self.sessionId = id
+        self.modelContext = context
+        loadHistory()
+    }
+
+    // MARK: - 持久化
+
+    /// 从 SwiftData 加载历史消息
+    private func loadHistory() {
+        guard let context = modelContext else { return }
+        let sid = sessionId
+        let descriptor = FetchDescriptor<MessageEntity>(
+            predicate: #Predicate { $0.session?.id == sid },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+        )
+        guard let entities = try? context.fetch(descriptor) else { return }
+        messages = entities.map { entity in
+            ChatMessage(
+                id: entity.id,
+                role: entity.role,
+                content: entity.content,
+                toolCallBody: entity.toolCallBody,
+                costUSD: entity.costUSD,
+                createdAt: entity.createdAt
+            )
+        }
+        // 恢复 session 累计
+        if let session = try? context.fetch(
+            FetchDescriptor<SessionEntity>(predicate: #Predicate { $0.id == sid })
+        ).first {
+            sessionCostUSD = session.totalCostUSD
+            sessionInputTokens = session.totalInputTokens
+            sessionOutputTokens = session.totalOutputTokens
+        }
+    }
+
+    /// 落盘单条消息
+    private func persist(_ msg: ChatMessage) {
+        guard let context = modelContext else { return }
+        let entity = MessageEntity(
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            toolCallBody: msg.toolCallBody,
+            costUSD: msg.costUSD
+        )
+        entity.createdAt = msg.createdAt
+        if let session = try? context.fetch(
+            FetchDescriptor<SessionEntity>(predicate: #Predicate { $0.id == sessionId })
+        ).first {
+            entity.session = session
+            session.updatedAt = Date()
+        }
+        context.insert(entity)
+        try? context.save()
+    }
+
+    /// 更新已落盘消息的 content（流式完成后调用）
+    private func updatePersisted(_ msg: ChatMessage) {
+        guard let context = modelContext else { return }
+        let mid = msg.id
+        if let entity = try? context.fetch(
+            FetchDescriptor<MessageEntity>(predicate: #Predicate { $0.id == mid })
+        ).first {
+            entity.content = msg.content
+            entity.toolCallBody = msg.toolCallBody
+            entity.costUSD = msg.costUSD
+            try? context.save()
+        }
+    }
+
+    /// 更新 session 累计
+    private func updateSessionTotals() {
+        guard let context = modelContext else { return }
+        let sid = sessionId
+        if let session = try? context.fetch(
+            FetchDescriptor<SessionEntity>(predicate: #Predicate { $0.id == sid })
+        ).first {
+            session.totalCostUSD = sessionCostUSD
+            session.totalInputTokens = sessionInputTokens
+            session.totalOutputTokens = sessionOutputTokens
+            session.updatedAt = Date()
+            try? context.save()
+        }
     }
 
     // MARK: - Send
@@ -89,8 +176,10 @@ final class ChatViewModel {
 
         let userMsg = ChatMessage(role: "user", content: text)
         messages.append(userMsg)
+        persist(userMsg)
         draft = ""
         errorMessage = nil
+        streamingReasoning = ""
 
         let assistantId = UUID()
         let assistantMsg = ChatMessage(id: assistantId, role: "assistant", content: "", isStreaming: true)
@@ -197,6 +286,7 @@ final class ChatViewModel {
                 let names = tcs.map { $0.function.name }.joined(separator: ", ")
                 let toolMsg = ChatMessage(role: "assistant", content: "🔧 调用工具：\(names)", toolCallBody: body)
                 messages.append(toolMsg)
+                persist(toolMsg)
                 DebugBus.shared.cli("⚙ 工具调用：\(names)")
             }
 
@@ -212,6 +302,7 @@ final class ChatViewModel {
                 name: msg.name
             )
             messages.append(toolMsg)
+            persist(toolMsg)
             // 从上一条 assistant 的 toolCallBody 里查找对应 toolCallId 的 arguments
             var argsForDebug = ""
             if let tid = msg.toolCallId,
@@ -232,6 +323,7 @@ final class ChatViewModel {
             sessionInputTokens += prompt
             sessionOutputTokens += completion
             sessionCostUSD += cost
+            updateSessionTotals()
             DebugBus.shared.token(selectedModelId, prompt: prompt, completion: completion, costUSD: cost)
 
         case .artifact(let path):
@@ -256,6 +348,9 @@ final class ChatViewModel {
             messages[idx].isStreaming = false
             if messages[idx].content.isEmpty && messages[idx].reasoning.isEmpty {
                 messages.remove(at: idx)
+            } else {
+                // 持久化最终的 assistant 消息
+                persist(messages[idx])
             }
         }
         currentAssistantId = nil

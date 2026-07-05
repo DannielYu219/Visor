@@ -20,10 +20,10 @@ struct DesignCanvasView: View {
     var body: some View {
         VStack(spacing: 0) {
             toolbar
-            Divider().opacity(0.2)
             webView
         }
         .glassBackground(corner: DesignTokens.Radius.m)
+        .toolbar(.hidden, for: .navigationBar)
         .task(id: sessionId) {
             await reload()
             subscribe()
@@ -37,6 +37,7 @@ struct DesignCanvasView: View {
 
     private var toolbar: some View {
         HStack(spacing: DesignTokens.Spacing.s) {
+            // 左：标题
             HStack(spacing: 6) {
                 Image(systemName: "paintbrush.pointed.fill")
                     .foregroundStyle(.secondary)
@@ -52,53 +53,69 @@ struct DesignCanvasView: View {
             }
             Spacer()
 
-            // 文件切换
-            if !fileList.isEmpty {
-                Menu {
-                    ForEach(fileList, id: \.path) { entry in
-                        Button {
-                            Task { await switchTo(entry.path) }
-                        } label: {
-                            HStack {
-                                Text(entry.path)
-                                if entry.path == activePath {
-                                    Image(systemName: "checkmark")
+            // 右：四个独立圆形 Liquid Glass 按钮
+            HStack(spacing: DesignTokens.Spacing.s) {
+                // 文件切换
+                if !fileList.isEmpty {
+                    Menu {
+                        ForEach(fileList, id: \.path) { entry in
+                            Button {
+                                Task { await switchTo(entry.path) }
+                            } label: {
+                                HStack {
+                                    Text(entry.path)
+                                    if entry.path == activePath {
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
+                    } label: {
+                        circularButtonIcon(systemName: "doc.text")
                     }
-                } label: {
-                    Image(systemName: "doc.text")
-                        .font(.system(size: 14))
+                    .accessibilityLabel("切换文件")
                 }
-            }
 
-            Button {
-                reloadTrigger += 1
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 14))
-            }
-            .accessibilityLabel("刷新画布")
+                // 刷新
+                Button {
+                    reloadTrigger += 1
+                } label: {
+                    circularButtonIcon(systemName: "arrow.clockwise")
+                }
+                .accessibilityLabel("刷新画布")
 
-            Button {
-                showSource.toggle()
-            } label: {
-                Image(systemName: showSource ? "eye.slash" : "chevron.left.forwardslash.chevron.right")
-                    .font(.system(size: 14))
-            }
-            .accessibilityLabel("显示 / 隐藏源代码")
+                // 源代码切换
+                Button {
+                    showSource.toggle()
+                } label: {
+                    circularButtonIcon(systemName: showSource ? "eye.slash" : "chevron.left.forwardslash.chevron.right")
+                }
+                .accessibilityLabel("显示 / 隐藏源代码")
 
-            Button {
-                copyHTML()
-            } label: {
-                Image(systemName: "doc.on.doc")
-                    .font(.system(size: 14))
+                // 导出
+                Button {
+                    exportHTML()
+                } label: {
+                    circularButtonIcon(systemName: "square.and.arrow.up")
+                }
+                .accessibilityLabel("导出 HTML")
             }
-            .accessibilityLabel("复制 HTML 源码")
         }
         .padding(.horizontal, DesignTokens.Spacing.l)
-        .padding(.vertical, DesignTokens.Spacing.s)
+        .padding(.top, DesignTokens.Spacing.s)
+        .padding(.bottom, DesignTokens.Spacing.s)
+    }
+
+    /// 圆形 Liquid Glass 按钮（48pt 触控区）
+    private func circularButtonIcon(systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 18, weight: .medium))
+            .frame(width: 44, height: 44)
+            .foregroundStyle(.primary)
+            .background(.ultraThinMaterial, in: Circle())
+            .overlay(Circle().strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+            .contentShape(Circle())
     }
 
     // MARK: - WebView
@@ -203,6 +220,46 @@ struct DesignCanvasView: View {
                 withAnimation { copyToast = nil }
             }
         }
+    }
+
+    /// 导出当前 HTML 到临时文件并弹出 Share Sheet
+    private func exportHTML() {
+        guard !currentHTML.isEmpty else {
+            withAnimation { copyToast = "画布为空，无内容可导出" }
+            Task {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                await MainActor.run { withAnimation { copyToast = nil } }
+            }
+            return
+        }
+        let fileName = (activePath as NSString).lastPathComponent.isEmpty ? "index.html" : (activePath as NSString).lastPathComponent
+        let tempDir = FileManager.default.temporaryDirectory
+        let url = tempDir.appendingPathComponent("Visor_\(fileName)")
+        do {
+            try currentHTML.write(to: url, atomically: true, encoding: .utf8)
+            // 直接通过 rootViewController present UIActivityViewController
+            presentShareSheet(url: url)
+        } catch {
+            withAnimation { copyToast = "导出失败：\(error.localizedDescription)" }
+            Task {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                await MainActor.run { withAnimation { copyToast = nil } }
+            }
+        }
+    }
+
+    /// 通过 UIWindow rootViewController 弹出系统分享
+    private func presentShareSheet(url: URL) {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let root = scene.windows.first?.rootViewController else { return }
+        let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        // iPad 需要 popoverPresentationController
+        if let pop = activityVC.popoverPresentationController {
+            pop.sourceView = root.view
+            pop.sourceRect = CGRect(x: root.view.bounds.midX, y: 40, width: 0, height: 0)
+            pop.permittedArrowDirections = []
+        }
+        root.present(activityVC, animated: true)
     }
 }
 
