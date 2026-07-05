@@ -201,7 +201,19 @@ final class AgentRuntime: @unchecked Sendable {
                     validToolCalls.append(tc)
                     log(continuation, "✓ tool_call \(tc.function.name) args valid (\(tc.function.arguments.count) chars)")
                 } else {
-                    log(continuation, "✗ tool_call \(tc.function.name) args INVALID: \(tc.function.arguments.prefix(200))")
+                    // 尝试修复未闭合的 JSON（长内容流式截断常见）
+                    let repaired = repairArgumentsJSON(tc.function.arguments)
+                    if isValidJSON(repaired) {
+                        let fixed = ToolCall(
+                            id: tc.id,
+                            type: tc.type,
+                            function: .init(name: tc.function.name, arguments: repaired)
+                        )
+                        validToolCalls.append(fixed)
+                        log(continuation, "⚠ tool_call \(tc.function.name) args repaired (\(tc.function.arguments.count) → \(repaired.count) chars)")
+                    } else {
+                        log(continuation, "✗ tool_call \(tc.function.name) args INVALID (\(tc.function.arguments.count) chars): \(tc.function.arguments.prefix(200))")
+                    }
                 }
             }
 
@@ -242,6 +254,59 @@ final class AgentRuntime: @unchecked Sendable {
     private func isValidJSON(_ s: String) -> Bool {
         guard let data = s.data(using: .utf8) else { return false }
         return (try? JSONSerialization.jsonObject(with: data)) != nil
+    }
+
+    /// 尝试修复流式截断导致的未闭合 JSON
+    /// 常见情况：`{"path":"index.html","content":"<html>...` 被截断，缺少闭合的 `"}`
+    private func repairArgumentsJSON(_ s: String) -> String {
+        var repaired = s
+
+        // 如果以 `{` 开头但不是有效 JSON，尝试补全闭合括号
+        guard repaired.hasPrefix("{") else { return repaired }
+
+        // 统计未闭合的引号和括号
+        var inString = false
+        var escape = false
+        var braceDepth = 0
+        var bracketDepth = 0
+
+        for ch in repaired {
+            if escape {
+                escape = false
+                continue
+            }
+            if ch == "\\" && inString {
+                escape = true
+                continue
+            }
+            if ch == "\"" {
+                inString.toggle()
+                continue
+            }
+            if inString { continue }
+            switch ch {
+            case "{": braceDepth += 1
+            case "}": braceDepth -= 1
+            case "[": bracketDepth += 1
+            case "]": bracketDepth -= 1
+            default: break
+            }
+        }
+
+        // 如果还在字符串内，补一个闭合引号
+        if inString {
+            repaired += "\""
+        }
+
+        // 补全未闭合的括号
+        for _ in 0..<max(0, bracketDepth) {
+            repaired += "]"
+        }
+        for _ in 0..<max(0, braceDepth) {
+            repaired += "}"
+        }
+
+        return repaired
     }
 
     private struct ToolCallBuilder {

@@ -187,7 +187,12 @@ final class ChatViewModel {
         isStreaming = true
         currentAssistantId = assistantId
 
-        let history = messages.filter { $0.id != assistantId }.map { msg in
+        let history = messages.filter { $0.id != assistantId && $0.id != userMsg.id }.compactMap { msg -> Message? in
+            // 过滤掉占位消息和空内容消息（不发给模型）
+            if msg.content.isEmpty && msg.toolCallBody == nil && msg.toolCallId == nil { return nil }
+            // 过滤掉"正在调用工具"占位
+            if msg.content.hasPrefix("🔧 正在调用工具") { return nil }
+
             var toolCalls: [ToolCall]? = nil
             if let body = msg.toolCallBody,
                let data = body.data(using: .utf8),
