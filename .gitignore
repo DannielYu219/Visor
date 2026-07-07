@@ -28,3 +28,10 @@ Pods/
 
 # Trae IDE
 .trae/
+
+# Test artifacts (HTML prototypes / critique outputs)
+/index.html
+/index.html.artifact.json
+/ipad-*.html
+/ipad-*.artifact.json
+/critique.json

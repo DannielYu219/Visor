@@ -1,9 +1,6 @@
 import SwiftUI
 
 /// Debug 按钮 + 事件计数 badge
-/// - 默认显示 🐞 图标（低调）
-/// - 仅在有未读事件（错误 / token 变化）时显示右上角红点
-/// - 关键：这是用户**唯一**能看到 AI 工作状态的位置
 struct DebugBadgeButton: View {
     @Binding var showDebug: Bool
     @ObservedObject private var bus = DebugBus.shared
@@ -13,26 +10,29 @@ struct DebugBadgeButton: View {
     var body: some View {
         Button {
             showDebug = true
-            // 打开 Debug 面板后清空未读标记
             lastSeenCount = bus.events.count
             hasUnreadError = false
         } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "ladybug")
-                    .imageScale(.large)
+                    .font(.system(size: DesignTokens.Touch.icon, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .circularGlass(size: DesignTokens.Touch.standard)
+
                 if hasUnreadError {
                     Circle()
                         .fill(Color.red)
-                        .frame(width: 7, height: 7)
-                        .offset(x: 4, y: -2)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 5, y: -3)
                 } else if hasNewEvents {
                     Circle()
                         .fill(Color.blue)
-                        .frame(width: 7, height: 7)
-                        .offset(x: 4, y: -2)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 5, y: -3)
                 }
             }
         }
+        .buttonStyle(.plain)
         .accessibilityLabel("Debug")
         .onChange(of: bus.events.count) { _, _ in
             updateBadge()
@@ -48,7 +48,6 @@ struct DebugBadgeButton: View {
     }
 
     private func updateBadge() {
-        // 检测未读错误（最新事件是 error）
         if let last = bus.events.last, last.kind == .error, last.level == .error {
             hasUnreadError = true
         }

@@ -26,21 +26,21 @@ struct SidebarView: View {
                     .padding(.leading, DesignTokens.Spacing.l)
             }
             Spacer()
-            Button {
-                Task { await createNew() }
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 18))
-            }
+            CircularGlassButton(
+                systemName: "plus",
+                iconSize: DesignTokens.Touch.icon,
+                size: DesignTokens.Touch.standard,
+                action: { Task { await createNew() } }
+            )
             .accessibilityLabel("新建会话")
             .padding(.trailing, DesignTokens.Spacing.l)
         }
-        .padding(.vertical, DesignTokens.Spacing.s)
+        .padding(.vertical, DesignTokens.Spacing.m)
     }
 
     private var sessionList: some View {
         ScrollView {
-            LazyVStack(spacing: 4) {
+            LazyVStack(spacing: DesignTokens.Spacing.xs) {
                 ForEach(sessions) { session in
                     sessionRow(session)
                 }
@@ -56,29 +56,31 @@ struct SidebarView: View {
         Button {
             selectedSessionId = session.id
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: DesignTokens.Spacing.m) {
                 Image(systemName: isSelected ? "bubble.left.fill" : "bubble.left")
-                    .font(.system(size: 14))
+                    .font(.system(size: 18))
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .frame(width: 24, alignment: .center)
                 if !isCollapsed {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(session.title)
-                            .font(.visorBody)
+                            .font(.visorBodyLarge)
+                            .fontWeight(.medium)
                             .lineLimit(1)
                         Text(session.updatedAt.formatted(.relative(presentation: .numeric)))
                             .font(.visorCaption)
                             .foregroundStyle(.secondary)
                     }
-                    Spacer(minLength: 4)
+                    Spacer(minLength: DesignTokens.Spacing.s)
                     if isSelected {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 10))
+                            .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-            .padding(.horizontal, DesignTokens.Spacing.s)
-            .padding(.vertical, DesignTokens.Spacing.s)
+            .padding(.horizontal, DesignTokens.Spacing.l)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: DesignTokens.Radius.s)
@@ -98,7 +100,6 @@ struct SidebarView: View {
     @MainActor
     private func deleteSession(_ session: SessionEntity) {
         let id = session.id
-        // 删除文件系统目录
         let fm = FileManager.default
         if let appSupport = try? fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
             let dir = appSupport
@@ -107,10 +108,8 @@ struct SidebarView: View {
                 .appendingPathComponent(id.uuidString, isDirectory: true)
             try? fm.removeItem(at: dir)
         }
-        // 删除 SwiftData 记录
         context.delete(session)
         try? context.save()
-        // 选中第一个剩余会话，或新建
         if selectedSessionId == id {
             let remaining = sessions.sorted { $0.updatedAt > $1.updatedAt }
             if let first = remaining.first {

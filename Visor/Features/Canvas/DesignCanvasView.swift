@@ -2,27 +2,66 @@ import SwiftUI
 @preconcurrency import WebKit
 import os.log
 
+/// 画布渲染设置 UserDefaults keys
+private let kCanvasWidth  = "canvas_preview_width"
+private let kCanvasHeight = "canvas_preview_height"
+private let kCanvasRadius = "canvas_preview_radius"
+
 /// 设计画布：WebKit 渲染 session 工作目录中的文件
-/// - 数据源：FileSystemStore + 订阅 FileSystemNotifier 实时刷新
-/// - 默认渲染 index.html（如存在）
 struct DesignCanvasView: View {
     let sessionId: UUID
-    let activePath: String   // Agent 选中的入口路径
+    let activePath: String
     let skillName: String?
 
     @State private var showSource: Bool = false
+    @State private var showSettings: Bool = false
     @State private var reloadTrigger: Int = 0
     @State private var copyToast: String?
     @State private var fileList: [FileSystemStore.FileEntry] = []
     @State private var currentHTML: String = ""
+
+    // 画布渲染设置（0 = 填满容器）
+    @State private var canvasWidth: Double = UserDefaults.standard.double(forKey: kCanvasWidth)
+    @State private var canvasHeight: Double = UserDefaults.standard.double(forKey: kCanvasHeight)
+    @State private var canvasRadius: Double = UserDefaults.standard.double(forKey: kCanvasRadius)
+
+    // 画布容器实际尺寸（用于动态 max radius）
+    @State private var containerSize: CGSize = .zero
+
     private let logger = Logger(subsystem: "com.lyrastudio.Visor", category: "DesignCanvasView")
+    private let defaultsRadius: CGFloat = 16
+
+    /// 实际预览尺寸（0 则用容器尺寸）
+    private var previewSize: CGSize {
+        let w = canvasWidth  > 0 ? canvasWidth  : containerSize.width
+        let h = canvasHeight > 0 ? canvasHeight : containerSize.height
+        return CGSize(width: max(w, 1), height: max(h, 1))
+    }
+
+    /// 圆角最大值 = min(w, h) / 2（模拟手表/音箱等异形屏）
+    private var maxRadius: Double {
+        let s = previewSize
+        return Double(min(s.width, s.height) / 2)
+    }
+
+    /// 是否填满容器
+    private var isFillContainer: Bool { canvasWidth <= 0 && canvasHeight <= 0 }
 
     var body: some View {
         VStack(spacing: 0) {
             toolbar
             webView
         }
-        .glassBackground(corner: DesignTokens.Radius.m)
+        .background(
+            GeometryReader { geo in
+                Color.clear.onAppear {
+                    containerSize = geo.size
+                }.onChange(of: geo.size) { _, new in
+                    containerSize = new
+                }
+            }
+        )
+        .glassBackground(corner: DesignTokens.Radius.l)
         .toolbar(.hidden, for: .navigationBar)
         .task(id: sessionId) {
             await reload()
@@ -31,17 +70,20 @@ struct DesignCanvasView: View {
         .onChange(of: activePath) { _, _ in
             Task { await reload() }
         }
+        .popover(isPresented: $showSettings) {
+            canvasSettingsPopover
+        }
     }
 
     // MARK: - Toolbar
 
     private var toolbar: some View {
-        HStack(spacing: DesignTokens.Spacing.s) {
-            // 左：标题
+        HStack(spacing: DesignTokens.Spacing.m) {
             HStack(spacing: 6) {
                 Image(systemName: "paintbrush.pointed.fill")
+                    .font(.system(size: 16))
                     .foregroundStyle(.secondary)
-                Text(activePath.isEmpty ? "设计画布" : activePath)
+                Text(activePath.isEmpty ? "设计画布" : (activePath as NSString).lastPathComponent)
                     .font(.visorBody)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -53,9 +95,7 @@ struct DesignCanvasView: View {
             }
             Spacer()
 
-            // 右：四个独立圆形 Liquid Glass 按钮
-            HStack(spacing: DesignTokens.Spacing.s) {
-                // 文件切换
+            HStack(spacing: DesignTokens.Spacing.m) {
                 if !fileList.isEmpty {
                     Menu {
                         ForEach(fileList, id: \.path) { entry in
@@ -71,79 +111,173 @@ struct DesignCanvasView: View {
                             }
                         }
                     } label: {
-                        circularButtonIcon(systemName: "doc.text")
+                        Image(systemName: "doc.text")
+                            .font(.system(size: DesignTokens.Touch.icon, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .circularGlass(size: DesignTokens.Touch.standard)
                     }
                     .accessibilityLabel("切换文件")
                 }
 
-                // 刷新
-                Button {
+                CircularGlassButton(systemName: "arrow.clockwise", action: {
                     reloadTrigger += 1
-                } label: {
-                    circularButtonIcon(systemName: "arrow.clockwise")
-                }
+                })
                 .accessibilityLabel("刷新画布")
 
-                // 源代码切换
-                Button {
-                    showSource.toggle()
-                } label: {
-                    circularButtonIcon(systemName: showSource ? "eye.slash" : "chevron.left.forwardslash.chevron.right")
-                }
+                CircularGlassButton(
+                    systemName: showSource ? "eye.slash" : "chevron.left.forwardslash.chevron.right",
+                    action: { showSource.toggle() }
+                )
                 .accessibilityLabel("显示 / 隐藏源代码")
 
-                // 导出
-                Button {
+                CircularGlassButton(systemName: "square.and.arrow.up", action: {
                     exportHTML()
-                } label: {
-                    circularButtonIcon(systemName: "square.and.arrow.up")
-                }
+                })
                 .accessibilityLabel("导出 HTML")
+
+                CircularGlassButton(systemName: "gearshape", action: {
+                    showSettings.toggle()
+                })
+                .accessibilityLabel("画布设置")
             }
         }
         .padding(.horizontal, DesignTokens.Spacing.l)
-        .padding(.top, DesignTokens.Spacing.s)
-        .padding(.bottom, DesignTokens.Spacing.s)
+        .padding(.vertical, DesignTokens.Spacing.s)
     }
 
-    /// 圆形 Liquid Glass 按钮（48pt 触控区）
-    private func circularButtonIcon(systemName: String) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: 18, weight: .medium))
-            .frame(width: 44, height: 44)
-            .foregroundStyle(.primary)
-            .background(.ultraThinMaterial, in: Circle())
-            .overlay(Circle().strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
-            .contentShape(Circle())
+    // MARK: - Canvas Settings Popover
+
+    private var canvasSettingsPopover: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.l) {
+            Text("画布渲染设置")
+                .font(.visorTitle)
+
+            if !isFillContainer {
+                Text("当前预览: \(Int(previewSize.width)) × \(Int(previewSize.height))")
+                    .font(.visorCaption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("填满画布，尺寸随窗口自适应")
+                    .font(.visorCaption)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                Text("预览宽度 (px，0 = 填满)")
+                    .font(.visorCaption)
+                    .foregroundStyle(.secondary)
+                TextField("填满", value: $canvasWidth, format: .number)
+                    .font(.visorBody)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.numberPad)
+                    .onChange(of: canvasWidth) { _, new in
+                        UserDefaults.standard.set(Double(new), forKey: kCanvasWidth)
+                    }
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                Text("预览高度 (px，0 = 填满)")
+                    .font(.visorCaption)
+                    .foregroundStyle(.secondary)
+                TextField("填满", value: $canvasHeight, format: .number)
+                    .font(.visorBody)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.numberPad)
+                    .onChange(of: canvasHeight) { _, new in
+                        UserDefaults.standard.set(Double(new), forKey: kCanvasHeight)
+                    }
+            }
+
+            VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                Text("圆角 (pt，最大 \(Int(maxRadius)))")
+                    .font(.visorCaption)
+                    .foregroundStyle(.secondary)
+                TextField("\(Int(defaultsRadius))", value: $canvasRadius, format: .number)
+                    .font(.visorBody)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.numberPad)
+                    .onChange(of: canvasRadius) { _, new in
+                        // 钳位到 [0, maxRadius]
+                        let clamped = min(max(new, 0), maxRadius)
+                        if clamped != new {
+                            canvasRadius = clamped
+                        }
+                        UserDefaults.standard.set(Double(clamped), forKey: kCanvasRadius)
+                    }
+            }
+
+            HStack {
+                Button("复位 — 填满画布") {
+                    canvasWidth  = 0
+                    canvasHeight = 0
+                    canvasRadius = defaultsRadius
+                    UserDefaults.standard.set(0.0, forKey: kCanvasWidth)
+                    UserDefaults.standard.set(0.0, forKey: kCanvasHeight)
+                    UserDefaults.standard.set(Double(defaultsRadius), forKey: kCanvasRadius)
+                }
+                .font(.visorCaption)
+
+                Spacer()
+            }
+        }
+        .padding(DesignTokens.Spacing.xxl)
+        .frame(idealWidth: 320)
+        .presentationCompactAdaptation(.popover)
     }
 
     // MARK: - WebView
 
     private var webView: some View {
-        CanvasWebView(html: currentHTML, reloadTrigger: reloadTrigger)
-            .overlay(alignment: .top) {
-                if showSource {
-                    sourcePanel
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
+        Group {
+            if isFillContainer {
+                // 填满容器，无固定 frame
+                CanvasWebView(
+                    html: currentHTML,
+                    reloadTrigger: reloadTrigger,
+                    viewportWidth: Int(previewSize.width),
+                    viewportHeight: Int(previewSize.height)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: CGFloat(canvasRadius), style: .continuous))
+            } else {
+                // 固定尺寸 + 居中
+                CanvasWebView(
+                    html: currentHTML,
+                    reloadTrigger: reloadTrigger,
+                    viewportWidth: Int(previewSize.width),
+                    viewportHeight: Int(previewSize.height)
+                )
+                .frame(width: previewSize.width, height: previewSize.height)
+                .clipShape(RoundedRectangle(cornerRadius: CGFloat(canvasRadius), style: .continuous))
+                .background(
+                    RoundedRectangle(cornerRadius: CGFloat(canvasRadius), style: .continuous)
+                        .fill(Color.visorBackground)
+                        .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
-            .overlay(alignment: .bottom) {
-                if let toast = copyToast {
-                    Text(toast)
-                        .font(.visorCaption)
-                        .padding(.horizontal, DesignTokens.Spacing.l)
-                        .padding(.vertical, DesignTokens.Spacing.s)
-                        .background(.regularMaterial, in: Capsule())
-                        .padding(.bottom, DesignTokens.Spacing.l)
-                        .transition(.opacity)
-                }
+        }
+        .overlay(alignment: .top) {
+            if showSource {
+                sourcePanel
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
-            .overlay {
-                if currentHTML.isEmpty {
-                    emptyState
-                }
+        }
+        .overlay(alignment: .bottom) {
+            if let toast = copyToast {
+                Text(toast)
+                    .font(.visorCaption)
+                    .padding(.horizontal, DesignTokens.Spacing.l)
+                    .padding(.vertical, DesignTokens.Spacing.s)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.bottom, DesignTokens.Spacing.l)
+                    .transition(.opacity)
             }
+        }
+        .overlay {
+            if currentHTML.isEmpty {
+                emptyState
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -162,7 +296,7 @@ struct DesignCanvasView: View {
     private var sourcePanel: some View {
         ScrollView {
             Text(currentHTML.isEmpty ? "（无内容）" : currentHTML)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.system(size: 13, design: .monospaced))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(DesignTokens.Spacing.l)
@@ -202,7 +336,6 @@ struct DesignCanvasView: View {
     }
 
     private func subscribe() {
-        // 文件变更时自动刷新
         Task { @MainActor in
             for await note in FileSystemNotifier.shared.notifications(for: sessionId) {
                 await reload()
@@ -211,18 +344,6 @@ struct DesignCanvasView: View {
         }
     }
 
-    private func copyHTML() {
-        UIPasteboard.general.string = currentHTML
-        withAnimation { copyToast = "已复制 \(activePath)（\(currentHTML.utf8.count) 字节）" }
-        Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            await MainActor.run {
-                withAnimation { copyToast = nil }
-            }
-        }
-    }
-
-    /// 导出当前 HTML 到临时文件并弹出 Share Sheet
     private func exportHTML() {
         guard !currentHTML.isEmpty else {
             withAnimation { copyToast = "画布为空，无内容可导出" }
@@ -237,7 +358,6 @@ struct DesignCanvasView: View {
         let url = tempDir.appendingPathComponent("Visor_\(fileName)")
         do {
             try currentHTML.write(to: url, atomically: true, encoding: .utf8)
-            // 直接通过 rootViewController present UIActivityViewController
             presentShareSheet(url: url)
         } catch {
             withAnimation { copyToast = "导出失败：\(error.localizedDescription)" }
@@ -248,12 +368,10 @@ struct DesignCanvasView: View {
         }
     }
 
-    /// 通过 UIWindow rootViewController 弹出系统分享
     private func presentShareSheet(url: URL) {
         guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let root = scene.windows.first?.rootViewController else { return }
         let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        // iPad 需要 popoverPresentationController
         if let pop = activityVC.popoverPresentationController {
             pop.sourceView = root.view
             pop.sourceRect = CGRect(x: root.view.bounds.midX, y: 40, width: 0, height: 0)
@@ -268,6 +386,8 @@ struct DesignCanvasView: View {
 private struct CanvasWebView: UIViewRepresentable {
     let html: String
     let reloadTrigger: Int
+    let viewportWidth: Int
+    let viewportHeight: Int
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -278,6 +398,7 @@ private struct CanvasWebView: UIViewRepresentable {
         view.isOpaque = false
         view.backgroundColor = .clear
         view.scrollView.backgroundColor = .clear
+        view.scrollView.clipsToBounds = true
         view.allowsBackForwardNavigationGestures = false
         view.navigationDelegate = context.coordinator
         return view
@@ -297,7 +418,28 @@ private struct CanvasWebView: UIViewRepresentable {
             view.loadHTMLString("<html><body style='background:transparent'></body></html>", baseURL: nil)
             return
         }
-        view.loadHTMLString(html, baseURL: nil)
+        let injected = injectViewport(html)
+        view.loadHTMLString(injected, baseURL: nil)
+    }
+
+    /// 在 <head> 中注入 viewport meta
+    private func injectViewport(_ raw: String) -> String {
+        let meta = "<meta name=\"viewport\" content=\"width=\(viewportWidth), height=\(viewportHeight), initial-scale=1.0\">"
+        if raw.contains("<meta name=\"viewport\"") {
+            return raw.replacingOccurrences(
+                of: "<meta name=\"viewport\"[^>]*>",
+                with: meta,
+                options: .regularExpression
+            )
+        }
+        if let headRange = raw.range(of: "<head>", options: .caseInsensitive)
+            ?? raw.range(of: "<head ", options: .caseInsensitive) {
+            let insertPos = raw[headRange].hasSuffix(">") ? headRange.upperBound : headRange.upperBound
+            var result = raw
+            result.insert(contentsOf: meta, at: insertPos)
+            return result
+        }
+        return "<head>\(meta)</head>" + raw
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate {

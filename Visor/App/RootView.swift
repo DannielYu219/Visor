@@ -10,11 +10,8 @@ struct RootView: View {
     @State private var budgetGuard = BudgetGuard()
     @State private var selectedSessionId: UUID?
     @State private var sidebarCollapsed: Bool = false
-    /// 控制 Settings sheet
     @State private var showSettings: Bool = false
-    /// 控制 Debug sheet
     @State private var showDebug: Bool = false
-    /// 控制 API Key 空状态
     @State private var keychainTick: Int = 0
     @State private var skipEmptyState: Bool = false
 
@@ -27,13 +24,12 @@ struct RootView: View {
                 .navigationSplitViewColumnWidth(min: 360, ideal: 480)
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        HStack(spacing: 6) {
+                        HStack(spacing: DesignTokens.Spacing.s) {
                             DebugBadgeButton(showDebug: $showDebug)
-                            Button {
-                                showSettings = true
-                            } label: {
-                                Image(systemName: "gearshape")
-                            }
+                            CircularGlassButton(
+                                systemName: "gearshape",
+                                action: { showSettings = true }
+                            )
                             .accessibilityLabel("设置")
                         }
                     }
@@ -50,9 +46,15 @@ struct RootView: View {
                     }
                 } label: {
                     Image(systemName: "sidebar.left")
+                        .font(.system(size: DesignTokens.Touch.icon, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .circularGlass(size: DesignTokens.Touch.standard)
                 }
+                .buttonStyle(.plain)
             }
         }
+        .ignoresSafeArea()
+        .statusBarHidden(true)
         .overlay {
             if showEmptyState {
                 apiKeyEmptyState
@@ -110,6 +112,7 @@ struct RootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea(edges: .bottom)
     }
 
     // MARK: - Empty / Placeholder
@@ -126,7 +129,7 @@ struct RootView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - API Key Empty State（与之前 ChatView 中类似，提到 RootView）
+    // MARK: - API Key Empty State
 
     private var showEmptyState: Bool {
         _ = keychainTick
@@ -165,7 +168,7 @@ struct RootView: View {
                         .buttonStyle(.bordered)
                     }
                 }
-                .padding(DesignTokens.Spacing.xxl)
+                .padding(DesignTokens.Spacing.xxxl)
                 .frame(maxWidth: 420)
                 .glassBackgroundThick()
             }
@@ -195,6 +198,5 @@ struct CanvasHostView: View {
                 FetchDescriptor<SessionEntity>(predicate: #Predicate { $0.id == sessionId })
             ).first
         }
-        // 接收 chat 的 canvasPath 更新（通过外部通知 / environment）
     }
 }

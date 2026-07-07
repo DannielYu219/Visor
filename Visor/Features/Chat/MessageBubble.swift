@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 消息气泡（2026-07-04 v5：Markdown 渲染 + 字号/行距优化）
+/// 消息气泡（2026-07-07 v6：用户气泡 accent 蓝染色，助手气泡 surface 底 + 边框）
 struct MessageBubble: View {
     let message: ChatMessage
     @State private var reasoningExpanded: Bool = false
@@ -8,11 +8,11 @@ struct MessageBubble: View {
     var body: some View {
         HStack(alignment: .top, spacing: DesignTokens.Spacing.s) {
             if message.role == "user" {
-                Spacer(minLength: DesignTokens.Spacing.xxl * 2)
+                Spacer(minLength: DesignTokens.Spacing.xxxl * 2)
                 bubbleContent
             } else {
                 bubbleContent
-                Spacer(minLength: DesignTokens.Spacing.xxl * 2)
+                Spacer(minLength: DesignTokens.Spacing.xxxl * 2)
             }
         }
         .padding(.horizontal, DesignTokens.Spacing.l)
@@ -49,24 +49,34 @@ struct MessageBubble: View {
         }
     }
 
-    /// 正文内容：assistant 用 Markdown 渲染，user 用纯文本
+    /// 正文内容
     @ViewBuilder
     private var contentView: some View {
         let displayText = message.content.isEmpty && message.isStreaming ? " " : message.content
         if message.role == "user" {
             Text(displayText)
                 .font(.visorBodyLarge)
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
                 .multilineTextAlignment(.leading)
                 .textSelection(.enabled)
                 .padding(.horizontal, DesignTokens.Spacing.l)
                 .padding(.vertical, DesignTokens.Spacing.m)
-                .glassBackground(corner: DesignTokens.Radius.m)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                        .fill(Color.visorUserBubble)
+                )
         } else {
             MarkdownView(text: displayText)
                 .padding(.horizontal, DesignTokens.Spacing.l)
                 .padding(.vertical, DesignTokens.Spacing.m)
-                .glassBackground(corner: DesignTokens.Radius.m)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                        .fill(Color.visorAssistantBubble)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                        .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                )
         }
     }
 
@@ -99,7 +109,7 @@ struct MessageBubble: View {
                     .padding(.vertical, DesignTokens.Spacing.s)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.visorTertiaryBackground.opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.xs, style: .continuous))
                     .padding(.top, DesignTokens.Spacing.xs)
             }
         }
@@ -130,7 +140,7 @@ struct MessageBubble: View {
         .padding(.vertical, DesignTokens.Spacing.s)
         .frame(maxWidth: 480, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.xs, style: .continuous)
                 .fill(Color.green.opacity(0.06))
         )
         .overlay(alignment: .leading) {
@@ -295,7 +305,7 @@ struct MarkdownView: View {
                 .padding(.vertical, DesignTokens.Spacing.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.visorTertiaryBackground.opacity(0.6))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.xs, style: .continuous))
 
         case .listItem(let content, let ordered, let index):
             HStack(alignment: .top, spacing: 6) {
@@ -338,11 +348,11 @@ struct MarkdownView: View {
     private func headingView(level: Int, content: String) -> some View {
         let font: Font = {
             switch level {
-            case 1: return .system(size: 22, weight: .bold)
-            case 2: return .system(size: 20, weight: .bold)
-            case 3: return .system(size: 18, weight: .semibold)
-            case 4: return .system(size: 17, weight: .semibold)
-            case 5: return .system(size: 16, weight: .semibold)
+            case 1: return .system(size: 26, weight: .bold)
+            case 2: return .system(size: 23, weight: .bold)
+            case 3: return .system(size: 21, weight: .semibold)
+            case 4: return .system(size: 19, weight: .semibold)
+            case 5: return .system(size: 18, weight: .semibold)
             default: return .visorBodyLarge
             }
         }()
@@ -353,7 +363,6 @@ struct MarkdownView: View {
 
     // MARK: - Inline 渲染
 
-    /// 行内 Markdown：用 AttributedString 解析（支持 **bold** / *italic* / `code` / [link](url)）
     private func inlineText(_ s: String) -> some View {
         Text(inlineAttributed(s))
     }

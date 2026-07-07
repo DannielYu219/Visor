@@ -3,8 +3,6 @@ import SwiftData
 import os.log
 
 /// 聊天会话视图（中栏）
-/// - 仅包含：header + 消息流 + composer
-/// - 画布在 detail 列单独显示
 struct DesignSessionView: View {
     @State private var viewModel: ChatViewModel
     @ObservedObject var budgetGuard: BudgetGuard
@@ -46,7 +44,7 @@ struct DesignSessionView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: DesignTokens.Spacing.s) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(OpenRouterModels.find(viewModel.selectedModelId)?.displayName ?? viewModel.selectedModelId)
                     .font(.visorTitle)
@@ -65,7 +63,7 @@ struct DesignSessionView: View {
             modelPicker
         }
         .padding(.horizontal, DesignTokens.Spacing.l)
-        .padding(.vertical, DesignTokens.Spacing.m)
+        .padding(.vertical, DesignTokens.Spacing.l)
     }
 
     private var modelPicker: some View {
@@ -84,7 +82,9 @@ struct DesignSessionView: View {
             }
         } label: {
             Image(systemName: "cpu")
-                .font(.system(size: 16))
+                .font(.system(size: DesignTokens.Touch.icon, weight: .medium))
+                .foregroundStyle(.primary)
+                .circularGlass(size: DesignTokens.Touch.standard)
         }
         .accessibilityLabel("选择模型")
     }
@@ -94,7 +94,7 @@ struct DesignSessionView: View {
     private var chatPanel: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
+                LazyVStack(alignment: .leading, spacing: DesignTokens.Spacing.l) {
                     if viewModel.messages.isEmpty {
                         emptyState
                     } else {
@@ -119,7 +119,7 @@ struct DesignSessionView: View {
     private var emptyState: some View {
         VStack(spacing: DesignTokens.Spacing.s) {
             Image(systemName: "paintbrush.pointed")
-                .font(.system(size: 28))
+                .font(.system(size: 32))
                 .foregroundStyle(.secondary)
             Text("试试输入「做一个 pitch deck」或「设计一个登录页」")
                 .font(.visorCaption)
@@ -127,7 +127,7 @@ struct DesignSessionView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DesignTokens.Spacing.l)
+        .padding(.vertical, DesignTokens.Spacing.xxxl)
     }
 
     // MARK: - Banners
@@ -143,7 +143,7 @@ struct DesignSessionView: View {
                 viewModel.errorMessage = nil
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12))
+                    .font(.system(size: 16))
             }
         }
         .padding(.horizontal, DesignTokens.Spacing.l)

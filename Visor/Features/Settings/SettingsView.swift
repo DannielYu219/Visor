@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 设置页（Phase 1：API Key + 预算）
+/// 设置页
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
@@ -17,74 +17,135 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("OpenRouter") {
-                    HStack {
-                        Group {
-                            if showKey {
-                                TextField("API Key", text: $apiKeyInput)
-                            } else {
-                                SecureField("API Key", text: $apiKeyInput)
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
+                    // API Key 卡片
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
+                        Text("OpenRouter API Key")
+                            .font(.visorTitle)
+
+                        HStack(spacing: DesignTokens.Spacing.s) {
+                            Group {
+                                if showKey {
+                                    TextField("API Key", text: $apiKeyInput)
+                                } else {
+                                    SecureField("API Key", text: $apiKeyInput)
+                                }
+                            }
+                            .textContentType(.password)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .font(.visorBody)
+                            .padding(.horizontal, DesignTokens.Spacing.l)
+                            .padding(.vertical, 11)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                                    .fill(Color.visorTertiaryBackground)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                            )
+
+                            CircularGlassButton(
+                                systemName: showKey ? "eye.slash" : "eye",
+                                iconSize: DesignTokens.Touch.compactIcon,
+                                size: DesignTokens.Touch.compact,
+                                action: { showKey.toggle() }
+                            )
+                            .accessibilityLabel(showKey ? "隐藏 API Key" : "显示 API Key")
+                        }
+
+                        HStack(spacing: DesignTokens.Spacing.s) {
+                            Button("保存到 Keychain") {
+                                saveKey()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+
+                            Button("清除已保存的 Key", role: .destructive) {
+                                KeychainStore.openRouterAPIKey = nil
+                                apiKeyInput = ""
+                                saveStatus = .idle
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .tint(.red)
+                        }
+
+                        switch saveStatus {
+                        case .idle:
+                            EmptyView()
+                        case .saved:
+                            Text("已保存")
+                                .font(.visorCaption)
+                                .foregroundStyle(Color.visorStatusSuccessText)
+                        case .error(let msg):
+                            Text(msg)
+                                .font(.visorCaption)
+                                .foregroundStyle(Color.visorStatusFailedText)
+                        }
+                    }
+                    .padding(DesignTokens.Spacing.xxl)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .fill(Color.visorBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.04), radius: 16, y: 4)
+
+                    // 预算卡片
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
+                        Text("预算（USD）")
+                            .font(.visorTitle)
+                        BudgetEditor(budgetGuard: budgetGuard)
+                    }
+                    .padding(DesignTokens.Spacing.xxl)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .fill(Color.visorBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.04), radius: 16, y: 4)
+
+                    // 模型定价卡片
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                        Text("模型定价（实时）")
+                            .font(.visorTitle)
+                        ForEach(OpenRouterModels.catalog, id: \.id) { info in
+                            if let p = ModelPricingTable.shared.pricing(for: info.id) {
+                                HStack {
+                                    Text(info.displayName)
+                                        .font(.visorBody)
+                                    Spacer()
+                                    Text(String(format: "in $%.2f / out $%.2f", p.inputPricePerMTokensUSD, p.outputPricePerMTokensUSD))
+                                        .font(.visorCaption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Divider().opacity(0.1)
                             }
                         }
-                        .textContentType(.password)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-
-                        Button {
-                            showKey.toggle()
-                        } label: {
-                            Image(systemName: showKey ? "eye.slash" : "eye")
-                        }
-                        .accessibilityLabel(showKey ? "隐藏 API Key" : "显示 API Key")
                     }
-
-                    Button {
-                        saveKey()
-                    } label: {
-                        Text("保存到 Keychain")
-                    }
-                    .disabled(apiKeyInput.isEmpty)
-
-                    switch saveStatus {
-                    case .idle:
-                        EmptyView()
-                    case .saved:
-                        Text("已保存")
-                            .font(.visorCaption)
-                            .foregroundStyle(Color.visorStatusSuccessText)
-                    case .error(let msg):
-                        Text(msg)
-                            .font(.visorCaption)
-                            .foregroundStyle(Color.visorStatusFailedText)
-                    }
-
-                    Button("清除已保存的 Key") {
-                        KeychainStore.openRouterAPIKey = nil
-                        apiKeyInput = ""
-                        saveStatus = .idle
-                    }
-                    .foregroundStyle(Color.visorStatusFailedText)
+                    .padding(DesignTokens.Spacing.xxl)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .fill(Color.visorBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.04), radius: 16, y: 4)
                 }
-
-                Section("预算（USD）") {
-                    BudgetEditor(budgetGuard: budgetGuard)
-                }
-
-                Section("模型定价（实时）") {
-                    ForEach(OpenRouterModels.catalog, id: \.id) { info in
-                        if let p = ModelPricingTable.shared.pricing(for: info.id) {
-                            HStack {
-                                Text(info.displayName)
-                                Spacer()
-                                Text(String(format: "in $%.2f / out $%.2f", p.inputPricePerMTokensUSD, p.outputPricePerMTokensUSD))
-                                    .font(.visorCaption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
+                .padding(DesignTokens.Spacing.l)
             }
+            .background(Color.visorSecondaryBackground)
             .navigationTitle("设置")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -147,6 +208,7 @@ struct BudgetEditor: View {
     private func stepperRow(label: String, value: Binding<Double>) -> some View {
         HStack {
             Text(label)
+                .font(.visorBody)
             Spacer()
             Text(String(format: "$%.2f", value.wrappedValue))
                 .font(.visorCaption)
