@@ -38,13 +38,26 @@ final class AgentRuntime: @unchecked Sendable {
         self.router = router ?? SkillRouter(skills: SkillRouter.default)
     }
 
-    func run(userInput: String, history: [Message], modelId: String, sessionId: UUID) -> AsyncStream<Event> {
+    func run(
+        userInput: String,
+        history: [Message],
+        modelId: String,
+        sessionId: UUID,
+        attachments: [Data] = []
+    ) -> AsyncStream<Event> {
         currentTask?.cancel()
         let (stream, continuation) = AsyncStream<Event>.makeStream()
 
         currentTask = Task.detached {
             defer { continuation.finish() }
-            await self.runInternal(userInput: userInput, history: history, modelId: modelId, sessionId: sessionId, continuation: continuation)
+            await self.runInternal(
+                userInput: userInput,
+                history: history,
+                modelId: modelId,
+                sessionId: sessionId,
+                attachments: attachments,
+                continuation: continuation
+            )
         }
         continuation.onTermination = { @Sendable _ in
             self.currentTask?.cancel()
@@ -69,6 +82,7 @@ final class AgentRuntime: @unchecked Sendable {
         history: [Message],
         modelId: String,
         sessionId: UUID,
+        attachments: [Data],
         continuation: AsyncStream<Event>.Continuation
     ) async {
         log(continuation, "▶ runInternal start")
@@ -87,11 +101,38 @@ final class AgentRuntime: @unchecked Sendable {
         continuation.yield(.skillRouted(routed.primary.displayName))
         log(continuation, "✓ routed to \(routed.primary.name)")
 
-        let combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLISkillFragment
+        // 读取当前 session 文件清单，注入系统提示让 Agent 能"针对某个文件"修改
+        let fileContext: String
+        do {
+            let entries = try fs.list()
+            if entries.isEmpty {
+                fileContext = "(空)"
+            } else {
+                fileContext = entries.map { "- \($0.path) (\($0.size)B)" }.joined(separator: "\n")
+            }
+        } catch {
+            fileContext = "(读取失败：\(error.localizedDescription))"
+        }
+        let fileContextFragment = """
+
+---
+## 当前 session 文件清单
+\(fileContext)
+
+用户说「修改某个文件」时，请先用 file_read 读取该文件，再用 file_write 覆盖。不要凭空猜测文件内容。
+"""
+
+        let combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLISkillFragment + fileContextFragment
         let userMsgWithHint = userInput + "\n\n[系统提示] 请先用 1-2 句中文告诉用户你打算做什么，然后再调用工具。"
         var messages: [Message] = [.system(combinedSystemPrompt)]
         messages.append(contentsOf: history)
-        messages.append(.user(userMsgWithHint))
+        // 多模态：若有图片则构建 vision user 消息
+        if !attachments.isEmpty {
+            messages.append(.user(text: userMsgWithHint, images: attachments))
+            log(continuation, "✓ user message with \(attachments.count) image(s)")
+        } else {
+            messages.append(.user(userMsgWithHint))
+        }
         log(continuation, "✓ messages count: \(messages.count)")
 
         for round in 1...maxToolRounds {
@@ -232,7 +273,7 @@ final class AgentRuntime: @unchecked Sendable {
                 log(continuation, "▶ executing \(tc.function.name)...")
                 let result = FileTools.execute(name: tc.function.name, argumentsJSON: tc.function.arguments, fs: fs, sessionId: sessionId)
                 log(continuation, "✓ tool result: \(result.prefix(200))")
-                let toolMsg = Message(role: "tool", content: result, toolCallId: tc.id, name: tc.function.name)
+                let toolMsg = Message(role: "tool", content: .text(result), toolCallId: tc.id, name: tc.function.name)
                 messages.append(toolMsg)
                 continuation.yield(.toolMessage(toolMsg))
             }

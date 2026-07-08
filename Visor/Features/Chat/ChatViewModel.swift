@@ -14,6 +14,8 @@ struct ChatMessage: Identifiable, Hashable {
     var name: String? = nil
     var isStreaming: Bool = false
     var costUSD: Double = 0
+    /// 多模态附件：data URL 字符串数组（"data:image/jpeg;base64,..."）
+    var attachments: [String]? = nil
     var createdAt: Date
 
     init(
@@ -26,6 +28,7 @@ struct ChatMessage: Identifiable, Hashable {
         name: String? = nil,
         isStreaming: Bool = false,
         costUSD: Double = 0,
+        attachments: [String]? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -37,6 +40,7 @@ struct ChatMessage: Identifiable, Hashable {
         self.name = name
         self.isStreaming = isStreaming
         self.costUSD = costUSD
+        self.attachments = attachments
         self.createdAt = createdAt
     }
 }
@@ -51,6 +55,10 @@ final class ChatViewModel {
 
     var messages: [ChatMessage] = []
     var draft: String = ""
+    /// 当前 draft 中的图片附件（data URL 字符串），发送后清空
+    var draftAttachments: [String] = []
+    /// 单条消息图片上限（防 token 爆炸）
+    static let maxAttachments = 4
     var selectedModelId: String {
         get {
             let v = UserDefaults.standard.string(forKey: "selectedModelId")
@@ -105,6 +113,7 @@ final class ChatViewModel {
                 content: entity.content,
                 toolCallBody: entity.toolCallBody,
                 costUSD: entity.costUSD,
+                attachments: Self.decodeAttachments(entity.attachments),
                 createdAt: entity.createdAt
             )
         }
@@ -126,6 +135,7 @@ final class ChatViewModel {
             role: msg.role,
             content: msg.content,
             toolCallBody: msg.toolCallBody,
+            attachments: Self.encodeAttachments(msg.attachments),
             costUSD: msg.costUSD
         )
         entity.createdAt = msg.createdAt
@@ -168,16 +178,102 @@ final class ChatViewModel {
         }
     }
 
+    // MARK: - 附件管理
+
+    /// 添加图片附件（data URL 字符串）。返回 false 表示已达上限
+    @discardableResult
+    func addAttachment(_ dataURL: String) -> Bool {
+        guard draftAttachments.count < Self.maxAttachments else { return false }
+        draftAttachments.append(dataURL)
+        return true
+    }
+
+    /// 移除指定索引的附件
+    func removeAttachment(at index: Int) {
+        guard draftAttachments.indices.contains(index) else { return }
+        draftAttachments.remove(at: index)
+    }
+
+    /// 清空所有附件
+    func clearAttachments() {
+        draftAttachments.removeAll()
+    }
+
+    /// 导入文本文件到 session 沙盒
+    /// - 若是 HTML 文件，自动切换画布渲染目标
+    /// - 失败时设置 errorMessage
+    func importFile(_ url: URL) {
+        let sid = sessionId
+        Task {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+
+            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+                await MainActor.run { errorMessage = "无法读取文件（可能不是 UTF-8 文本）" }
+                return
+            }
+
+            guard content.utf8.count < 1_000_000 else {
+                await MainActor.run { errorMessage = "文件过大（>1MB），请选择更小的文件" }
+                return
+            }
+
+            let filename = url.lastPathComponent
+            do {
+                let fs = try FileSystemStore(sessionId: sid)
+                let isHTML = filename.lowercased().hasSuffix(".html")
+                _ = try fs.write(content: content, to: filename)
+                FileSystemNotifier.shared.notify(sessionId: sid, path: filename, kind: .write, switchTo: isHTML)
+
+                await MainActor.run {
+                    DebugBus.shared.cli("✓ 已导入文件：\(filename) (\(content.utf8.count)B)")
+                }
+            } catch {
+                await MainActor.run { errorMessage = "文件写入失败：\(error.localizedDescription)" }
+            }
+        }
+    }
+
+    /// 把 data URL 字符串转回 Data（用于发送给模型）
+    private static func dataURLToData(_ dataURL: String) -> Data? {
+        // 格式：data:image/jpeg;base64,XXXX
+        guard let commaIdx = dataURL.range(of: ",") else { return nil }
+        let base64 = String(dataURL[commaIdx.upperBound...])
+        return Data(base64Encoded: base64)
+    }
+
+    /// 编码附件为 JSON 字符串（用于持久化）
+    private static func encodeAttachments(_ attachments: [String]?) -> String? {
+        guard let arr = attachments, !arr.isEmpty else { return nil }
+        guard let data = try? JSONSerialization.data(withJSONObject: arr, options: []),
+              let s = String(data: data, encoding: .utf8) else { return nil }
+        return s
+    }
+
+    /// 从 JSON 字符串解码附件（用于恢复）
+    private static func decodeAttachments(_ json: String?) -> [String]? {
+        guard let json, let data = json.data(using: .utf8),
+              let arr = try? JSONSerialization.jsonObject(with: data) as? [String] else { return nil }
+        return arr.isEmpty ? nil : arr
+    }
+
     // MARK: - Send
 
     func send() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isStreaming else { return }
+        let attachments = draftAttachments
+        // 文本或附件任一非空即可发送
+        guard (!text.isEmpty || !attachments.isEmpty), !isStreaming else { return }
 
-        let userMsg = ChatMessage(role: "user", content: text)
+        let userMsg = ChatMessage(
+            role: "user",
+            content: text,
+            attachments: attachments.isEmpty ? nil : attachments
+        )
         messages.append(userMsg)
         persist(userMsg)
         draft = ""
+        draftAttachments = []
         errorMessage = nil
         streamingReasoning = ""
 
@@ -189,7 +285,7 @@ final class ChatViewModel {
 
         let history = messages.filter { $0.id != assistantId && $0.id != userMsg.id }.compactMap { msg -> Message? in
             // 过滤掉占位消息和空内容消息（不发给模型）
-            if msg.content.isEmpty && msg.toolCallBody == nil && msg.toolCallId == nil { return nil }
+            if msg.content.isEmpty && msg.toolCallBody == nil && msg.toolCallId == nil && (msg.attachments?.isEmpty ?? true) { return nil }
             // 过滤掉"正在调用工具"占位
             if msg.content.hasPrefix("🔧 正在调用工具") { return nil }
 
@@ -199,20 +295,30 @@ final class ChatViewModel {
                let decoded = try? JSONDecoder().decode([ToolCall].self, from: data) {
                 toolCalls = decoded
             }
+
+            // 若有附件则构建多模态消息
+            if let imgs = msg.attachments, !imgs.isEmpty {
+                let imgData = imgs.compactMap { Self.dataURLToData($0) }
+                return Message.user(text: msg.content, images: imgData)
+            }
             return Message(
                 role: msg.role,
-                content: msg.content.isEmpty ? nil : msg.content,
+                content: msg.content.isEmpty ? nil : .text(msg.content),
                 toolCalls: toolCalls,
                 toolCallId: msg.toolCallId,
                 name: msg.name
             )
         }
 
+        // 把当前轮附件转成 Data 传给 runtime
+        let currentImageData = attachments.compactMap { Self.dataURLToData($0) }
+
         let stream = runtime.run(
             userInput: text,
             history: history,
             modelId: selectedModelId,
-            sessionId: sessionId
+            sessionId: sessionId,
+            attachments: currentImageData
         )
 
         consumeTask?.cancel()
@@ -302,7 +408,7 @@ final class ChatViewModel {
             }
             let toolMsg = ChatMessage(
                 role: "tool",
-                content: msg.content ?? "",
+                content: msg.content?.textValue ?? "",
                 toolCallId: msg.toolCallId,
                 name: msg.name
             )
@@ -318,7 +424,7 @@ final class ChatViewModel {
                     argsForDebug = match.function.arguments
                 }
             }
-            DebugBus.shared.tool(msg.name ?? "?", args: argsForDebug, result: msg.content ?? "")
+            DebugBus.shared.tool(msg.name ?? "?", args: argsForDebug, result: msg.content?.textValue ?? "")
             // 新建 assistant 占位
             let placeholder = ChatMessage(role: "assistant", content: "", isStreaming: true)
             messages.append(placeholder)
@@ -332,7 +438,12 @@ final class ChatViewModel {
             DebugBus.shared.token(selectedModelId, prompt: prompt, completion: completion, costUSD: cost)
 
         case .artifact(let path):
-            canvasPath = path
+            // Agent 写完 index.html，通知画布切换
+            let filename = (path as NSString).lastPathComponent
+            FileSystemNotifier.shared.notify(
+                sessionId: sessionId, path: filename, kind: .write, switchTo: true
+            )
+            canvasPath = filename
 
         case .error(let msg):
             errorMessage = msg
@@ -364,6 +475,8 @@ final class ChatViewModel {
     func clear() {
         stop()
         messages.removeAll()
+        draft = ""
+        draftAttachments.removeAll()
         sessionCostUSD = 0
         sessionInputTokens = 0
         sessionOutputTokens = 0

@@ -49,28 +49,52 @@ nonisolated final class ModelPricingTable: @unchecked Sendable {
     }
 
     static let builtinFallback: [String: ModelPricing] = [
-        "openai/gpt-5.5-pro": ModelPricing(
-            modelId: "openai/gpt-5.5-pro",
-            inputPricePerMTokensUSD: 30.0,
-            outputPricePerMTokensUSD: 180.0,
+        "moonshotai/kimi-k2.7-code": ModelPricing(
+            modelId: "moonshotai/kimi-k2.7-code",
+            inputPricePerMTokensUSD: 0.95,
+            outputPricePerMTokensUSD: 4.00,
             currency: "USD"
         ),
-        "anthropic/claude-sonnet-4.5": ModelPricing(
-            modelId: "anthropic/claude-sonnet-4.5",
-            inputPricePerMTokensUSD: 3.0,
-            outputPricePerMTokensUSD: 15.0,
+        "nex-agi/nex-n2-pro": ModelPricing(
+            modelId: "nex-agi/nex-n2-pro",
+            inputPricePerMTokensUSD: 0.25,
+            outputPricePerMTokensUSD: 1.00,
             currency: "USD"
         ),
-        "google/gemini-2.5-pro": ModelPricing(
-            modelId: "google/gemini-2.5-pro",
+        "nex-agi/nex-n2-mini": ModelPricing(
+            modelId: "nex-agi/nex-n2-mini",
+            inputPricePerMTokensUSD: 0.025,
+            outputPricePerMTokensUSD: 0.10,
+            currency: "USD"
+        ),
+        "qwen/qwen3.7-plus": ModelPricing(
+            modelId: "qwen/qwen3.7-plus",
+            inputPricePerMTokensUSD: 0.32,
+            outputPricePerMTokensUSD: 1.28,
+            currency: "USD"
+        ),
+        "minimax/minimax-m3": ModelPricing(
+            modelId: "minimax/minimax-m3",
+            inputPricePerMTokensUSD: 0.30,
+            outputPricePerMTokensUSD: 1.20,
+            currency: "USD"
+        ),
+        "stepfun/step-3.7-flash": ModelPricing(
+            modelId: "stepfun/step-3.7-flash",
+            inputPricePerMTokensUSD: 0.20,
+            outputPricePerMTokensUSD: 1.15,
+            currency: "USD"
+        ),
+        "x-ai/grok-build-0.1": ModelPricing(
+            modelId: "x-ai/grok-build-0.1",
+            inputPricePerMTokensUSD: 1.00,
+            outputPricePerMTokensUSD: 2.00,
+            currency: "USD"
+        ),
+        "x-ai/grok-4.3": ModelPricing(
+            modelId: "x-ai/grok-4.3",
             inputPricePerMTokensUSD: 1.25,
-            outputPricePerMTokensUSD: 10.0,
-            currency: "USD"
-        ),
-        "xiaomi/mimo-v2.5-pro": ModelPricing(
-            modelId: "xiaomi/mimo-v2.5-pro",
-            inputPricePerMTokensUSD: 0.435,
-            outputPricePerMTokensUSD: 0.87,
+            outputPricePerMTokensUSD: 2.50,
             currency: "USD"
         ),
         "xiaomi/mimo-v2.5": ModelPricing(
@@ -79,16 +103,70 @@ nonisolated final class ModelPricingTable: @unchecked Sendable {
             outputPricePerMTokensUSD: 0.28,
             currency: "USD"
         ),
-        "openai/gpt-4o-mini": ModelPricing(
-            modelId: "openai/gpt-4o-mini",
-            inputPricePerMTokensUSD: 0.15,
-            outputPricePerMTokensUSD: 0.60,
+        "tencent/hy3": ModelPricing(
+            modelId: "tencent/hy3",
+            inputPricePerMTokensUSD: 0.14,
+            outputPricePerMTokensUSD: 0.58,
             currency: "USD"
         ),
-        "anthropic/claude-haiku-4.5": ModelPricing(
-            modelId: "anthropic/claude-haiku-4.5",
-            inputPricePerMTokensUSD: 1.0,
-            outputPricePerMTokensUSD: 5.0,
+        "z-ai/glm-5.2": ModelPricing(
+            modelId: "z-ai/glm-5.2",
+            inputPricePerMTokensUSD: 0.91,
+            outputPricePerMTokensUSD: 2.86,
+            currency: "USD"
+        ),
+        "nvidia/nemotron-3-ultra-550b-a55b": ModelPricing(
+            modelId: "nvidia/nemotron-3-ultra-550b-a55b",
+            inputPricePerMTokensUSD: 0.50,
+            outputPricePerMTokensUSD: 2.20,
+            currency: "USD"
+        ),
+        "qwen/qwen3.7-max": ModelPricing(
+            modelId: "qwen/qwen3.7-max",
+            inputPricePerMTokensUSD: 1.25,
+            outputPricePerMTokensUSD: 3.75,
+            currency: "USD"
+        ),
+        "inclusionai/ring-2.6-1t": ModelPricing(
+            modelId: "inclusionai/ring-2.6-1t",
+            inputPricePerMTokensUSD: 0.075,
+            outputPricePerMTokensUSD: 0.625,
+            currency: "USD"
+        ),
+        "poolside/laguna-m.1": ModelPricing(
+            modelId: "poolside/laguna-m.1",
+            inputPricePerMTokensUSD: 0.20,
+            outputPricePerMTokensUSD: 0.40,
+            currency: "USD"
+        ),
+        "deepseek/deepseek-v4-pro": ModelPricing(
+            modelId: "deepseek/deepseek-v4-pro",
+            inputPricePerMTokensUSD: 0.435,
+            outputPricePerMTokensUSD: 0.87,
+            currency: "USD"
+        ),
+        "deepseek/deepseek-v4-flash": ModelPricing(
+            modelId: "deepseek/deepseek-v4-flash",
+            inputPricePerMTokensUSD: 0.0983,
+            outputPricePerMTokensUSD: 0.1966,
+            currency: "USD"
+        ),
+        "xiaomi/mimo-v2.5-pro": ModelPricing(
+            modelId: "xiaomi/mimo-v2.5-pro",
+            inputPricePerMTokensUSD: 0.435,
+            outputPricePerMTokensUSD: 0.87,
+            currency: "USD"
+        ),
+        "inclusionai/ling-2.6-flash": ModelPricing(
+            modelId: "inclusionai/ling-2.6-flash",
+            inputPricePerMTokensUSD: 0.01,
+            outputPricePerMTokensUSD: 0.03,
+            currency: "USD"
+        ),
+        "arcee-ai/trinity-large-thinking": ModelPricing(
+            modelId: "arcee-ai/trinity-large-thinking",
+            inputPricePerMTokensUSD: 0.25,
+            outputPricePerMTokensUSD: 0.80,
             currency: "USD"
         )
     ]

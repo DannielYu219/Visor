@@ -28,6 +28,10 @@ struct MessageBubble: View {
                 if !message.reasoning.isEmpty {
                     reasoningSection
                 }
+                // 图片附件（仅 user 消息）
+                if message.role == "user", let attachments = message.attachments, !attachments.isEmpty {
+                    attachmentsSection(attachments)
+                }
                 // 正文
                 if !message.content.isEmpty || message.isStreaming {
                     contentView
@@ -47,6 +51,46 @@ struct MessageBubble: View {
             }
             .padding(.horizontal, DesignTokens.Spacing.s)
         }
+    }
+
+    /// 用户消息的图片附件渲染
+    @ViewBuilder
+    private func attachmentsSection(_ attachments: [String]) -> some View {
+        VStack(spacing: DesignTokens.Spacing.xs) {
+            ForEach(Array(attachments.enumerated()), id: \.offset) { _, dataURL in
+                if let img = Self.imageFromDataURL(dataURL) {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: 220, maxHeight: 220)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                                .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                        .fill(Color.visorTertiaryBackground)
+                        .frame(width: 220, height: 220)
+                        .overlay(
+                            VStack(spacing: DesignTokens.Spacing.xs) {
+                                Image(systemName: "photo.badge.exclamationmark")
+                                    .font(.system(size: 24))
+                                Text("图片解码失败")
+                                    .font(.visorCaption)
+                            }
+                            .foregroundStyle(.secondary)
+                        )
+                }
+            }
+        }
+        .padding(.horizontal, DesignTokens.Spacing.l)
+        .padding(.vertical, DesignTokens.Spacing.s)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                .fill(Color.visorUserBubble)
+        )
     }
 
     /// 正文内容
@@ -153,6 +197,14 @@ struct MessageBubble: View {
     private func formatToolResult(_ raw: String) -> String {
         if raw.count <= 200 { return raw }
         return String(raw.prefix(200)) + "…"
+    }
+
+    /// 从 data URL 字符串解码出 UIImage
+    private static func imageFromDataURL(_ dataURL: String) -> UIImage? {
+        guard let commaIdx = dataURL.range(of: ",") else { return nil }
+        let base64 = String(dataURL[commaIdx.upperBound...])
+        guard let data = Data(base64Encoded: base64) else { return nil }
+        return UIImage(data: data)
     }
 }
 

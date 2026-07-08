@@ -7,7 +7,6 @@ struct DesignSessionView: View {
     @State private var viewModel: ChatViewModel
     @ObservedObject var budgetGuard: BudgetGuard
     let sessionId: UUID
-    @State private var canvasPath: String = ""
     @Environment(\.modelContext) private var modelContext
 
     init(budgetGuard: BudgetGuard, sessionId: UUID) {
@@ -27,18 +26,12 @@ struct DesignSessionView: View {
             }
             Divider().opacity(0.2)
             chatPanel
-            ComposerBar(
-                text: Bindable(viewModel).draft,
-                isStreaming: viewModel.isStreaming,
-                onSend: { viewModel.send() },
-                onStop: { viewModel.stop() }
-            )
+            ComposerBar(viewModel: viewModel) { url in
+                viewModel.importFile(url)
+            }
         }
         .background(Color.visorBackground)
         .onAppear { viewModel.attachSession(sessionId, context: modelContext) }
-        .onChange(of: viewModel.canvasPath) { _, new in
-            canvasPath = new
-        }
     }
 
     // MARK: - Header

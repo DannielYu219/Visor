@@ -53,7 +53,7 @@ struct RootView: View {
                 .buttonStyle(.plain)
             }
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(edges: .top)
         .statusBarHidden(true)
         .overlay {
             if showEmptyState {
@@ -182,7 +182,6 @@ struct RootView: View {
 /// 画布宿主（订阅 session 的文件变化并驱动 Canvas）
 struct CanvasHostView: View {
     let sessionId: UUID
-    @State private var canvasPath: String = ""
     @State private var skillName: String?
     @State private var session: SessionEntity?
     @Environment(\.modelContext) private var context
@@ -190,7 +189,6 @@ struct CanvasHostView: View {
     var body: some View {
         DesignCanvasView(
             sessionId: sessionId,
-            activePath: canvasPath,
             skillName: skillName
         )
         .task(id: sessionId) {

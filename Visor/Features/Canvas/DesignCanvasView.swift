@@ -10,11 +10,13 @@ private let kCanvasRadius = "canvas_preview_radius"
 /// 设计画布：WebKit 渲染 session 工作目录中的文件
 struct DesignCanvasView: View {
     let sessionId: UUID
-    let activePath: String
     let skillName: String?
+    /// 当前画布渲染的相对路径（内部管理，通过 FileSystemNotifier 切换）
+    @State private var activePath: String = ""
 
     @State private var showSource: Bool = false
     @State private var showSettings: Bool = false
+    @State private var showFileManager: Bool = false
     @State private var reloadTrigger: Int = 0
     @State private var copyToast: String?
     @State private var fileList: [FileSystemStore.FileEntry] = []
@@ -67,11 +69,14 @@ struct DesignCanvasView: View {
             await reload()
             subscribe()
         }
-        .onChange(of: activePath) { _, _ in
-            Task { await reload() }
-        }
         .popover(isPresented: $showSettings) {
             canvasSettingsPopover
+        }
+        .sheet(isPresented: $showFileManager) {
+            FileManagerSheet(sessionId: sessionId) { url in
+                importFile(url)
+            }
+            .presentationDetents([.large])
         }
     }
 
@@ -96,28 +101,10 @@ struct DesignCanvasView: View {
             Spacer()
 
             HStack(spacing: DesignTokens.Spacing.m) {
-                if !fileList.isEmpty {
-                    Menu {
-                        ForEach(fileList, id: \.path) { entry in
-                            Button {
-                                Task { await switchTo(entry.path) }
-                            } label: {
-                                HStack {
-                                    Text(entry.path)
-                                    if entry.path == activePath {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "doc.text")
-                            .font(.system(size: DesignTokens.Touch.icon, weight: .medium))
-                            .foregroundStyle(.primary)
-                            .circularGlass(size: DesignTokens.Touch.standard)
-                    }
-                    .accessibilityLabel("切换文件")
-                }
+                CircularGlassButton(systemName: "folder.badge.gearshape", action: {
+                    showFileManager = true
+                })
+                .accessibilityLabel("文件管理")
 
                 CircularGlassButton(systemName: "arrow.clockwise", action: {
                     reloadTrigger += 1
@@ -337,9 +324,15 @@ struct DesignCanvasView: View {
 
     private func subscribe() {
         Task { @MainActor in
-            for await note in FileSystemNotifier.shared.notifications(for: sessionId) {
-                await reload()
-                _ = note
+            for await switchPath in FileSystemNotifier.shared.notifications(for: sessionId) {
+                if let path = switchPath {
+                    // switchTo=true：切换画布渲染目标
+                    activePath = path
+                    await reload()
+                } else {
+                    // 普通文件变更：仅刷新当前文件
+                    await reload()
+                }
             }
         }
     }
@@ -364,6 +357,43 @@ struct DesignCanvasView: View {
             Task {
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 await MainActor.run { withAnimation { copyToast = nil } }
+            }
+        }
+    }
+
+    /// 从外部 URL 导入文件到 session 沙盒
+    private func importFile(_ url: URL) {
+        let sid = sessionId
+        Task {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+
+            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+                await MainActor.run { copyToast = "无法读取文件（可能不是 UTF-8 文本）" }
+                return
+            }
+            guard content.utf8.count < 1_000_000 else {
+                await MainActor.run { copyToast = "文件过大（>1MB）" }
+                return
+            }
+
+            let filename = url.lastPathComponent
+            do {
+                let fs = try FileSystemStore(sessionId: sid)
+                let isHTML = filename.lowercased().hasSuffix(".html")
+                _ = try fs.write(content: content, to: filename)
+                FileSystemNotifier.shared.notify(
+                    sessionId: sid, path: filename, kind: .write, switchTo: isHTML
+                )
+                await MainActor.run {
+                    copyToast = "✓ 已导入：\(filename)"
+                    Task {
+                        try? await Task.sleep(nanoseconds: 1_500_000_000)
+                        await MainActor.run { withAnimation { copyToast = nil } }
+                    }
+                }
+            } catch {
+                await MainActor.run { copyToast = "导入失败：\(error.localizedDescription)" }
             }
         }
     }
