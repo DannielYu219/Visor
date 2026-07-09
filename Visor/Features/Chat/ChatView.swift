@@ -39,8 +39,9 @@ struct DesignSessionView: View {
     private var header: some View {
         HStack(spacing: DesignTokens.Spacing.s) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(OpenRouterModels.find(viewModel.selectedModelId)?.displayName ?? viewModel.selectedModelId)
+                Text(modelDisplayName(viewModel.selectedModelId))
                     .font(.visorTitle)
+                    .lineLimit(1)
                 HStack(spacing: 6) {
                     Text(String(format: "$%.4f", viewModel.sessionCostUSD))
                     Text("·")
@@ -59,16 +60,47 @@ struct DesignSessionView: View {
         .padding(.vertical, DesignTokens.Spacing.l)
     }
 
+    /// 解析模型显示名（支持自定义服务商模型）
+    private func modelDisplayName(_ modelId: String) -> String {
+        if let resolved = CustomProviderRegistry.shared.resolve(modelId) {
+            return resolved.displayName
+        }
+        return OpenRouterModels.find(modelId)?.displayName ?? modelId
+    }
+
     private var modelPicker: some View {
         Menu {
-            ForEach(OpenRouterModels.catalog, id: \.id) { info in
-                Button {
-                    viewModel.selectedModelId = info.id
-                } label: {
-                    HStack {
-                        Text(info.displayName)
-                        if info.id == viewModel.selectedModelId {
-                            Image(systemName: "checkmark")
+            // OpenRouter 内置模型
+            Section("OpenRouter") {
+                ForEach(OpenRouterModels.catalog, id: \.id) { info in
+                    Button {
+                        viewModel.selectedModelId = info.id
+                    } label: {
+                        HStack {
+                            Text(info.displayName)
+                            if info.id == viewModel.selectedModelId {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 自定义服务商模型（按 provider 分组）
+            let customProviders = CustomProviderRegistry.shared.allConfigs()
+            ForEach(customProviders, id: \.id) { config in
+                Section(config.name) {
+                    ForEach(config.models, id: \.id) { model in
+                        let namespaced = config.namespacedModelId(model.id)
+                        Button {
+                            viewModel.selectedModelId = namespaced
+                        } label: {
+                            HStack {
+                                Text(model.displayName)
+                                if namespaced == viewModel.selectedModelId {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
                     }
                 }

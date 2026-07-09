@@ -32,6 +32,23 @@ nonisolated enum KeychainStore {
 
     /// 写入（覆盖）
     static func set(_ value: String, for item: Item) throws {
+        try set(value, account: item.rawValue)
+    }
+
+    /// 读取
+    static func get(_ item: Item) -> String? {
+        get(account: item.rawValue)
+    }
+
+    /// 删除
+    static func delete(_ item: Item) throws {
+        try delete(account: item.rawValue)
+    }
+
+    // MARK: - 通用 account API（用于自定义服务商等动态 account）
+
+    /// 写入（覆盖）— 按 account 名存储
+    static func set(_ value: String, account: String) throws {
         guard let data = value.data(using: .utf8) else {
             throw KeychainError.dataConversion
         }
@@ -39,7 +56,7 @@ nonisolated enum KeychainStore {
         let baseQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: item.rawValue
+            kSecAttrAccount as String: account
         ]
 
         // 尝试更新
@@ -65,12 +82,12 @@ nonisolated enum KeychainStore {
         }
     }
 
-    /// 读取
-    static func get(_ item: Item) -> String? {
+    /// 读取 — 按 account 名读取
+    static func get(account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: item.rawValue,
+            kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -90,12 +107,12 @@ nonisolated enum KeychainStore {
         return value
     }
 
-    /// 删除
-    static func delete(_ item: Item) throws {
+    /// 删除 — 按 account 名删除
+    static func delete(account: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: item.rawValue
+            kSecAttrAccount as String: account
         ]
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {

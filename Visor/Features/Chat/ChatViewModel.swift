@@ -62,7 +62,14 @@ final class ChatViewModel {
     var selectedModelId: String {
         get {
             let v = UserDefaults.standard.string(forKey: "selectedModelId")
-            if let v, OpenRouterModels.find(v) != nil { return v }
+            if let v {
+                // 自定义模型 or OpenRouter 内置模型
+                if CustomProviderRegistry.shared.isCustomModel(v) {
+                    if CustomProviderRegistry.shared.resolve(v) != nil { return v }
+                } else if OpenRouterModels.find(v) != nil {
+                    return v
+                }
+            }
             return OpenRouterModels.defaultModelId
         }
         set { UserDefaults.standard.set(newValue, forKey: "selectedModelId") }

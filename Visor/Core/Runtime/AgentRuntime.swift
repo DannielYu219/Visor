@@ -13,10 +13,12 @@ import os.log
 /// - 流式 watchdog：120 秒无 delta → 超时
 /// - .log 事件：全链路诊断日志通过事件流发到 DebugBus
 final class AgentRuntime: @unchecked Sendable {
-    private let provider: ModelProvider
+    private let defaultProvider: ModelProvider
+    private let registry: CustomProviderRegistry
     private let router: SkillRouter
     private let maxToolRounds = 6
     private var currentTask: Task<Void, Never>?
+    private var currentProvider: ModelProvider?
     private let logger = Logger(subsystem: "com.lyrastudio.Visor", category: "AgentRuntime")
 
     enum Event: Sendable {
@@ -33,8 +35,9 @@ final class AgentRuntime: @unchecked Sendable {
         case completed
     }
 
-    init(provider: ModelProvider? = nil, router: SkillRouter? = nil) {
-        self.provider = provider ?? OpenRouterClient()
+    init(provider: ModelProvider? = nil, router: SkillRouter? = nil, registry: CustomProviderRegistry = .shared) {
+        self.defaultProvider = provider ?? OpenRouterClient()
+        self.registry = registry
         self.router = router ?? SkillRouter(skills: SkillRouter.default)
     }
 
@@ -46,6 +49,14 @@ final class AgentRuntime: @unchecked Sendable {
         attachments: [Data] = []
     ) -> AsyncStream<Event> {
         currentTask?.cancel()
+        currentProvider?.cancel()
+
+        // 按 modelId 解析 provider（自定义服务商 or 默认 OpenRouter）
+        let resolved = registry.resolve(modelId)
+        let provider = resolved?.provider ?? defaultProvider
+        let effectiveModelId = resolved?.modelId ?? modelId
+        currentProvider = provider
+
         let (stream, continuation) = AsyncStream<Event>.makeStream()
 
         currentTask = Task.detached {
@@ -53,7 +64,8 @@ final class AgentRuntime: @unchecked Sendable {
             await self.runInternal(
                 userInput: userInput,
                 history: history,
-                modelId: modelId,
+                provider: provider,
+                modelId: effectiveModelId,
                 sessionId: sessionId,
                 attachments: attachments,
                 continuation: continuation
@@ -67,7 +79,8 @@ final class AgentRuntime: @unchecked Sendable {
 
     func cancel() {
         currentTask?.cancel()
-        if let p = provider as? OpenRouterClient { p.cancel() }
+        currentProvider?.cancel()
+        currentProvider = nil
     }
 
     private func log(_ continuation: AsyncStream<Event>.Continuation, _ msg: String) {
@@ -80,6 +93,7 @@ final class AgentRuntime: @unchecked Sendable {
     private func runInternal(
         userInput: String,
         history: [Message],
+        provider: ModelProvider,
         modelId: String,
         sessionId: UUID,
         attachments: [Data],
@@ -142,7 +156,7 @@ final class AgentRuntime: @unchecked Sendable {
             }
             log(continuation, "▶ round \(round) start")
 
-            let stream = self.provider.stream(messages: messages, tools: FileTools.all, modelId: modelId)
+            let stream = provider.stream(messages: messages, tools: FileTools.all, modelId: modelId)
 
             var textAccum = ""
             var toolFragments: [Int: ToolCallBuilder] = [:]

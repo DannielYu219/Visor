@@ -9,6 +9,11 @@ struct SettingsView: View {
     @State private var saveStatus: SaveStatus = .idle
     @ObservedObject var budgetGuard: BudgetGuard
 
+    // 自定义服务商
+    @State private var customProviders: [CustomProviderConfig] = []
+    @State private var showProviderEditor: Bool = false
+    @State private var editingProvider: CustomProviderConfig?
+
     enum SaveStatus: Equatable {
         case idle
         case saved
@@ -97,6 +102,44 @@ struct SettingsView: View {
                     )
                     .shadow(color: .black.opacity(0.04), radius: 16, y: 4)
 
+                    // 自定义服务商卡片
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
+                        HStack {
+                            Text("自定义服务商")
+                                .font(.visorTitle)
+                            Spacer()
+                            Button {
+                                editingProvider = nil
+                                showProviderEditor = true
+                            } label: {
+                                Label("添加", systemImage: "plus")
+                                    .font(.visorCaption)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+
+                        if customProviders.isEmpty {
+                            Text("添加 OpenAI 兼容的自定义服务商（如 OpenAI、Together、Groq 等）")
+                                .font(.visorCaption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(customProviders) { config in
+                                customProviderRow(config)
+                            }
+                        }
+                    }
+                    .padding(DesignTokens.Spacing.xxl)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .fill(Color.visorBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.04), radius: 16, y: 4)
+
                     // 预算卡片
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
                         Text("预算（USD）")
@@ -156,8 +199,92 @@ struct SettingsView: View {
                 if let existing = KeychainStore.openRouterAPIKey {
                     apiKeyInput = existing
                 }
+                reloadCustomProviders()
+            }
+            .sheet(isPresented: $showProviderEditor, onDismiss: { reloadCustomProviders() }) {
+                CustomProviderEditorSheet(
+                    editing: editingProvider,
+                    onSave: { config, apiKey in
+                        saveCustomProvider(config, apiKey: apiKey)
+                    }
+                )
             }
         }
+    }
+
+    // MARK: - 自定义服务商
+
+    private func reloadCustomProviders() {
+        CustomProviderRegistry.shared.reload()
+        customProviders = CustomProviderRegistry.shared.allConfigs()
+    }
+
+    @ViewBuilder
+    private func customProviderRow(_ config: CustomProviderConfig) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(config.name)
+                        .font(.visorBody)
+                    Text(config.baseURL)
+                        .font(.visorCaption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Text("\(config.models.count) 个模型")
+                        .font(.visorCaption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button {
+                    editingProvider = config
+                    showProviderEditor = true
+                } label: {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("编辑")
+
+                Button(role: .destructive) {
+                    deleteCustomProvider(config)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.visorStatusFailedText)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("删除")
+            }
+        }
+        .padding(DesignTokens.Spacing.s)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.s, style: .continuous)
+                .fill(Color.visorTertiaryBackground)
+        )
+    }
+
+    private func saveCustomProvider(_ config: CustomProviderConfig, apiKey: String) {
+        var current = CustomProviderRegistry.shared.allConfigs()
+        if let idx = current.firstIndex(where: { $0.id == config.id }) {
+            current[idx] = config
+        } else {
+            current.append(config)
+        }
+        CustomProviderRegistry.shared.save(current)
+        // 保存 API Key 到 Keychain
+        if !apiKey.isEmpty {
+            try? CustomProviderRegistry.shared.setAPIKey(apiKey, for: config.id)
+        }
+        reloadCustomProviders()
+    }
+
+    private func deleteCustomProvider(_ config: CustomProviderConfig) {
+        var current = CustomProviderRegistry.shared.allConfigs()
+        current.removeAll { $0.id == config.id }
+        CustomProviderRegistry.shared.save(current)
+        CustomProviderRegistry.shared.deleteAPIKey(for: config.id)
+        reloadCustomProviders()
     }
 
     private func saveKey() {
@@ -216,5 +343,251 @@ struct BudgetEditor: View {
             Stepper("", value: value, in: 1...1000, step: 1)
                 .labelsHidden()
         }
+    }
+}
+
+/// 自定义服务商编辑器
+struct CustomProviderEditorSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    /// 传入 nil 表示新增
+    let editing: CustomProviderConfig?
+    /// 保存回调：(配置, API Key 明文)
+    let onSave: (CustomProviderConfig, String) -> Void
+
+    @State private var name: String = ""
+    @State private var baseURL: String = ""
+    @State private var apiKey: String = ""
+    @State private var showAPIKey: Bool = false
+    @State private var models: [EditableModel] = []
+    @State private var errorMessage: String?
+    @State private var hasExistingKey: Bool = false
+
+    /// 可编辑模型（UUID 身份，避免空 ID 冲突）
+    struct EditableModel: Identifiable {
+        let id = UUID()
+        var modelId: String = ""
+        var displayName: String = ""
+        var supportsVision: Bool = false
+    }
+
+    private var isNew: Bool { editing == nil }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DesignTokens.Spacing.l) {
+                    // 基础信息
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                        Text("服务商信息")
+                            .font(.visorTitle)
+
+                        labeledField("名称") {
+                            TextField("如：我的 OpenAI", text: $name)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                        }
+
+                        labeledField("Base URL") {
+                            TextField("https://api.openai.com/v1", text: $baseURL)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .keyboardType(.URL)
+                        }
+                        Text("OpenAI 兼容格式，需包含 /v1 路径")
+                            .font(.visorCaption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    // API Key
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                        Text("API Key")
+                            .font(.visorTitle)
+                        HStack(spacing: DesignTokens.Spacing.s) {
+                            Group {
+                                if showAPIKey {
+                                    TextField("API Key", text: $apiKey)
+                                } else {
+                                    SecureField("API Key", text: $apiKey)
+                                }
+                            }
+                            .textContentType(.password)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .font(.visorBody)
+                            .padding(.horizontal, DesignTokens.Spacing.l)
+                            .padding(.vertical, 11)
+                            .background(
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                                    .fill(Color.visorTertiaryBackground)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                            )
+
+                            CircularGlassButton(
+                                systemName: showAPIKey ? "eye.slash" : "eye",
+                                iconSize: DesignTokens.Touch.compactIcon,
+                                size: DesignTokens.Touch.compact,
+                                action: { showAPIKey.toggle() }
+                            )
+                        }
+                        if hasExistingKey && apiKey.isEmpty {
+                            Text("已配置 API Key（留空则保持不变）")
+                                .font(.visorCaption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    // 模型列表
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                        HStack {
+                            Text("模型列表")
+                                .font(.visorTitle)
+                            Spacer()
+                            Button {
+                                models.append(EditableModel())
+                            } label: {
+                                Label("添加模型", systemImage: "plus")
+                                    .font(.visorCaption)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+
+                        if models.isEmpty {
+                            Text("至少添加一个模型")
+                                .font(.visorCaption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach($models) { $model in
+                                modelRow($model)
+                            }
+                        }
+                    }
+
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.visorCaption)
+                            .foregroundStyle(Color.visorStatusFailedText)
+                    }
+                }
+                .padding(DesignTokens.Spacing.l)
+            }
+            .background(Color.visorSecondaryBackground)
+            .navigationTitle(isNew ? "添加自定义服务商" : "编辑服务商")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { save() }
+                }
+            }
+            .onAppear { loadEditing() }
+        }
+    }
+
+    // MARK: - 子视图
+
+    @ViewBuilder
+    private func labeledField<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.visorCaption)
+                .foregroundStyle(.secondary)
+            content()
+                .font(.visorBody)
+                .padding(.horizontal, DesignTokens.Spacing.l)
+                .padding(.vertical, 11)
+                .background(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                        .fill(Color.visorTertiaryBackground)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DesignTokens.Radius.m, style: .continuous)
+                        .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                )
+        }
+    }
+
+    @ViewBuilder
+    private func modelRow(_ model: Binding<EditableModel>) -> some View {
+        VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
+            HStack(spacing: DesignTokens.Spacing.s) {
+                TextField("模型 ID", text: model.modelId)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(.visorBody)
+                Button(role: .destructive) {
+                    if let idx = models.firstIndex(where: { $0.id == model.wrappedValue.id }) {
+                        models.remove(at: idx)
+                    }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(Color.visorStatusFailedText)
+                }
+                .buttonStyle(.plain)
+            }
+            TextField("显示名称", text: model.displayName)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .font(.visorBody)
+            Toggle("支持图片输入", isOn: model.supportsVision)
+                .font(.visorCaption)
+        }
+        .padding(DesignTokens.Spacing.s)
+        .background(
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.s, style: .continuous)
+                .fill(Color.visorTertiaryBackground)
+        )
+    }
+
+    // MARK: - 逻辑
+
+    private func loadEditing() {
+        guard let editing else { return }
+        name = editing.name
+        baseURL = editing.baseURL
+        models = editing.models.map { EditableModel(modelId: $0.id, displayName: $0.displayName, supportsVision: $0.supportsVision) }
+        // 检查是否已有 API Key（不读取明文到内存，仅标记）
+        hasExistingKey = CustomProviderRegistry.shared.apiKey(for: editing.id) != nil
+    }
+
+    private func save() {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            errorMessage = "请填写服务商名称"
+            return
+        }
+        guard !trimmedURL.isEmpty, URL(string: trimmedURL) != nil else {
+            errorMessage = "Base URL 无效"
+            return
+        }
+        let validModels = models.compactMap { m -> CustomModelInfo? in
+            let mid = m.modelId.trimmingCharacters(in: .whitespacesAndNewlines)
+            let dname = m.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !mid.isEmpty, !dname.isEmpty else { return nil }
+            return CustomModelInfo(id: mid, displayName: dname, supportsVision: m.supportsVision)
+        }
+        guard !validModels.isEmpty else {
+            errorMessage = "至少添加一个有效的模型（需填写 ID 和显示名称）"
+            return
+        }
+
+        let id = editing?.id ?? UUID()
+        let config = CustomProviderConfig(
+            id: id,
+            name: trimmedName,
+            baseURL: trimmedURL,
+            models: validModels,
+            createdAt: editing?.createdAt ?? Date()
+        )
+        // 如果编辑时未输入新 Key 且已有 Key，传空串表示保持不变
+        onSave(config, apiKey)
+        dismiss()
     }
 }
