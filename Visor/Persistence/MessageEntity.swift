@@ -12,6 +12,8 @@ final class MessageEntity {
     var content: String
     /// 工具调用详情 JSON（OpenAI tool_calls 序列化）
     var toolCallBody: String?
+    /// 工具调用 ID（tool 消息必须携带，DeepSeek 等严格 API 要求）
+    var toolCallId: String?
     /// 多模态附件 JSON：["data:image/jpeg;base64,...", ...]
     /// 仅 user 消息会用，重启后恢复时重建为 MessageContent.parts
     var attachments: String?
@@ -27,6 +29,7 @@ final class MessageEntity {
         role: String,
         content: String,
         toolCallBody: String? = nil,
+        toolCallId: String? = nil,
         attachments: String? = nil,
         costUSD: Double = 0,
         inputTokens: Int = 0,
@@ -36,6 +39,7 @@ final class MessageEntity {
         self.role = role
         self.content = content
         self.toolCallBody = toolCallBody
+        self.toolCallId = toolCallId
         self.attachments = attachments
         self.costUSD = costUSD
         self.inputTokens = inputTokens

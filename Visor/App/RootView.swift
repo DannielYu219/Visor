@@ -107,6 +107,7 @@ struct RootView: View {
         Group {
             if let id = selectedSessionId {
                 CanvasHostView(sessionId: id)
+                    .id(id)
             } else {
                 placeholder(text: "暂无画布")
             }

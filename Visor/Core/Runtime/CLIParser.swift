@@ -27,6 +27,7 @@ struct CLIParser {
 
     enum Command: Sendable, Equatable {
         case write(path: String, content: String)
+        case patch(path: String, search: String, replace: String)
         case read(path: String)
         case remove(path: String)
         case list
@@ -86,6 +87,15 @@ struct CLIParser {
                 return .unknown(name: String(cmd), raw: block)
             }
             return .write(path: path, content: body)
+        case "patch", "p":
+            guard let path = attrs["path"] else {
+                return .unknown(name: String(cmd), raw: block)
+            }
+            // body 为 SEARCH/REPLACE 块
+            guard let sr = Self.parseSearchReplace(body) else {
+                return .unknown(name: String(cmd), raw: block)
+            }
+            return .patch(path: path, search: sr.search, replace: sr.replace)
         case "cat", "read":
             guard let path = attrs["path"] else {
                 return .unknown(name: String(cmd), raw: block)
@@ -143,6 +153,32 @@ struct CLIParser {
             }
         }
         return out
+    }
+
+    /// 解析 SEARCH/REPLACE 块
+    ///
+    /// 格式：
+    /// ```
+    /// <<<<<<< SEARCH
+    /// {要查找的原文}
+    /// =======
+    /// {替换后的内容}
+    /// >>>>>>> REPLACE
+    /// ```
+    /// - search = SEARCH 标记与 `=======` 之间的内容
+    /// - replace = `=======` 与 REPLACE 标记之间的内容
+    /// - 内部空白原样保留
+    static func parseSearchReplace(_ body: String) -> (search: String, replace: String)? {
+        let lines = body.components(separatedBy: "\n")
+        guard let searchStartIdx = lines.firstIndex(of: "<<<<<<< SEARCH") else { return nil }
+        guard let separatorIdx = lines[(searchStartIdx + 1)...].firstIndex(of: "=======") else { return nil }
+        guard let replaceEndIdx = lines[(separatorIdx + 1)...].firstIndex(of: ">>>>>>> REPLACE") else { return nil }
+
+        let searchLines = lines[(searchStartIdx + 1)..<separatorIdx]
+        let replaceLines = lines[(separatorIdx + 1)..<replaceEndIdx]
+        let search = searchLines.joined(separator: "\n")
+        let replace = replaceLines.joined(separator: "\n")
+        return (search, replace)
     }
 
     // MARK: - 流式增量解析

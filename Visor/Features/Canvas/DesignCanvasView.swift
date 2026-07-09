@@ -2,11 +2,6 @@ import SwiftUI
 @preconcurrency import WebKit
 import os.log
 
-/// 画布渲染设置 UserDefaults keys
-private let kCanvasWidth  = "canvas_preview_width"
-private let kCanvasHeight = "canvas_preview_height"
-private let kCanvasRadius = "canvas_preview_radius"
-
 /// 设计画布：WebKit 渲染 session 工作目录中的文件
 struct DesignCanvasView: View {
     let sessionId: UUID
@@ -22,16 +17,32 @@ struct DesignCanvasView: View {
     @State private var fileList: [FileSystemStore.FileEntry] = []
     @State private var currentHTML: String = ""
 
-    // 画布渲染设置（0 = 填满容器）
-    @State private var canvasWidth: Double = UserDefaults.standard.double(forKey: kCanvasWidth)
-    @State private var canvasHeight: Double = UserDefaults.standard.double(forKey: kCanvasHeight)
-    @State private var canvasRadius: Double = UserDefaults.standard.double(forKey: kCanvasRadius)
+    // 画布渲染设置（0 = 填满容器），按 session 隔离存储
+    @State private var canvasWidth: Double
+    @State private var canvasHeight: Double
+    @State private var canvasRadius: Double
 
     // 画布容器实际尺寸（用于动态 max radius）
     @State private var containerSize: CGSize = .zero
 
     private let logger = Logger(subsystem: "com.lyrastudio.Visor", category: "DesignCanvasView")
     private let defaultsRadius: CGFloat = 16
+
+    // session 隔离的 UserDefaults key
+    private var widthKey: String  { "canvas_width_\(sessionId.uuidString)" }
+    private var heightKey: String { "canvas_height_\(sessionId.uuidString)" }
+    private var radiusKey: String { "canvas_radius_\(sessionId.uuidString)" }
+
+    init(sessionId: UUID, skillName: String?) {
+        self.sessionId = sessionId
+        self.skillName = skillName
+        let w = UserDefaults.standard.double(forKey: "canvas_width_\(sessionId.uuidString)")
+        let h = UserDefaults.standard.double(forKey: "canvas_height_\(sessionId.uuidString)")
+        let r = UserDefaults.standard.double(forKey: "canvas_radius_\(sessionId.uuidString)")
+        _canvasWidth  = State(initialValue: w)
+        _canvasHeight = State(initialValue: h)
+        _canvasRadius = State(initialValue: r != 0 ? r : 16)
+    }
 
     /// 实际预览尺寸（0 则用容器尺寸）
     private var previewSize: CGSize {
@@ -66,6 +77,7 @@ struct DesignCanvasView: View {
         .glassBackground(corner: DesignTokens.Radius.l)
         .toolbar(.hidden, for: .navigationBar)
         .task(id: sessionId) {
+            reloadSettings()
             await reload()
             subscribe()
         }
@@ -158,7 +170,7 @@ struct DesignCanvasView: View {
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.numberPad)
                     .onChange(of: canvasWidth) { _, new in
-                        UserDefaults.standard.set(Double(new), forKey: kCanvasWidth)
+                        UserDefaults.standard.set(Double(new), forKey: widthKey)
                     }
             }
 
@@ -171,7 +183,7 @@ struct DesignCanvasView: View {
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.numberPad)
                     .onChange(of: canvasHeight) { _, new in
-                        UserDefaults.standard.set(Double(new), forKey: kCanvasHeight)
+                        UserDefaults.standard.set(Double(new), forKey: heightKey)
                     }
             }
 
@@ -189,7 +201,7 @@ struct DesignCanvasView: View {
                         if clamped != new {
                             canvasRadius = clamped
                         }
-                        UserDefaults.standard.set(Double(clamped), forKey: kCanvasRadius)
+                        UserDefaults.standard.set(Double(clamped), forKey: radiusKey)
                     }
             }
 
@@ -198,9 +210,9 @@ struct DesignCanvasView: View {
                     canvasWidth  = 0
                     canvasHeight = 0
                     canvasRadius = defaultsRadius
-                    UserDefaults.standard.set(0.0, forKey: kCanvasWidth)
-                    UserDefaults.standard.set(0.0, forKey: kCanvasHeight)
-                    UserDefaults.standard.set(Double(defaultsRadius), forKey: kCanvasRadius)
+                    UserDefaults.standard.set(0.0, forKey: widthKey)
+                    UserDefaults.standard.set(0.0, forKey: heightKey)
+                    UserDefaults.standard.set(Double(defaultsRadius), forKey: radiusKey)
                 }
                 .font(.visorCaption)
 
@@ -293,6 +305,16 @@ struct DesignCanvasView: View {
     }
 
     // MARK: - Actions
+
+    /// 从当前 session 的 UserDefaults key 重载画布设置
+    private func reloadSettings() {
+        let w = UserDefaults.standard.double(forKey: widthKey)
+        let h = UserDefaults.standard.double(forKey: heightKey)
+        let r = UserDefaults.standard.double(forKey: radiusKey)
+        canvasWidth  = w
+        canvasHeight = h
+        canvasRadius = r != 0 ? r : defaultsRadius
+    }
 
     private func reload() async {
         do {

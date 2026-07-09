@@ -119,6 +119,7 @@ final class ChatViewModel {
                 role: entity.role,
                 content: entity.content,
                 toolCallBody: entity.toolCallBody,
+                toolCallId: entity.toolCallId,
                 costUSD: entity.costUSD,
                 attachments: Self.decodeAttachments(entity.attachments),
                 createdAt: entity.createdAt
@@ -142,6 +143,7 @@ final class ChatViewModel {
             role: msg.role,
             content: msg.content,
             toolCallBody: msg.toolCallBody,
+            toolCallId: msg.toolCallId,
             attachments: Self.encodeAttachments(msg.attachments),
             costUSD: msg.costUSD
         )
@@ -290,11 +292,13 @@ final class ChatViewModel {
         isStreaming = true
         currentAssistantId = assistantId
 
-        let history = messages.filter { $0.id != assistantId && $0.id != userMsg.id }.compactMap { msg -> Message? in
+        let rawHistory = messages.filter { $0.id != assistantId && $0.id != userMsg.id }.compactMap { msg -> Message? in
             // 过滤掉占位消息和空内容消息（不发给模型）
             if msg.content.isEmpty && msg.toolCallBody == nil && msg.toolCallId == nil && (msg.attachments?.isEmpty ?? true) { return nil }
             // 过滤掉"正在调用工具"占位
             if msg.content.hasPrefix("🔧 正在调用工具") { return nil }
+            // DeepSeek 等严格 API 要求 tool 消息必须有 tool_call_id，跳过残缺的旧数据
+            if msg.role == "tool" && msg.toolCallId == nil { return nil }
 
             var toolCalls: [ToolCall]? = nil
             if let body = msg.toolCallBody,
@@ -315,6 +319,21 @@ final class ChatViewModel {
                 toolCallId: msg.toolCallId,
                 name: msg.name
             )
+        }
+
+        // Post-process: 过滤 tool 消息后，对应 assistant 的 tool_calls 变成孤立引用。
+        // DeepSeek 严格要求 assistant(tool_calls) 后紧跟 tool 响应，否则 400。
+        // 修复：若 assistant 有 tool_calls 但下一条不是 tool 消息，剥离其 tool_calls（保留正文）。
+        var history: [Message] = []
+        for (i, msg) in rawHistory.enumerated() {
+            if msg.role == "assistant", msg.toolCalls != nil {
+                let nextIsTool = i + 1 < rawHistory.count && rawHistory[i + 1].role == "tool"
+                if !nextIsTool {
+                    history.append(Message(role: "assistant", content: msg.content, toolCalls: nil))
+                    continue
+                }
+            }
+            history.append(msg)
         }
 
         // 把当前轮附件转成 Data 传给 runtime

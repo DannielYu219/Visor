@@ -12,7 +12,7 @@ nonisolated struct FileTools {
 
     /// 全部工具定义（用于发给模型）
     static var all: [ToolDefinition] {
-        [fileWrite, fileRead, fileList, fileRemove, fileMkdir]
+        [fileWrite, filePatch, fileRead, fileList, fileRemove, fileMkdir]
     }
 
     static var fileWrite: ToolDefinition {
@@ -21,6 +21,7 @@ nonisolated struct FileTools {
             description: """
             写入或覆盖一个文件到当前 session 的工作目录。路径相对于 session 根，例如 "index.html"、"assets/style.css"。
             用于把设计稿（HTML/CSS/JS）落到文件系统，画布会实时刷新预览。
+            仅在新建文件或用户强烈要求重构整个文件时使用；修改已有文件请优先用 file_patch 节约 token。
             """,
             parameters: .object([
                 "type": .string("object"),
@@ -35,6 +36,36 @@ nonisolated struct FileTools {
                     ])
                 ]),
                 "required": .array([.string("path"), .string("content")])
+            ])
+        )
+    }
+
+    static var filePatch: ToolDefinition {
+        ToolDefinition.function(
+            name: "file_patch",
+            description: """
+            局部替换修改已有文件的部分内容（SEARCH/REPLACE）。优先使用此工具修改已存在的文件，可极大节约 token 并提升速度。
+            传入要查找的原文 search 与替换后的内容 replace，工具会在文件中精确定位 search 并替换为 replace。
+            要求 search 在文件中唯一匹配（0 匹配或多次匹配都会失败，请补充更多上下文行使其唯一）。
+            replace 为空字符串表示删除 search 块。
+            """,
+            parameters: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "path": .object([
+                        "type": .string("string"),
+                        "description": .string("相对路径，例如 index.html")
+                    ]),
+                    "search": .object([
+                        "type": .string("string"),
+                        "description": .string("要查找并替换的原文，必须是文件中的精确片段（含缩进/换行），且在文件中唯一")
+                    ]),
+                    "replace": .object([
+                        "type": .string("string"),
+                        "description": .string("替换后的内容；传空串表示删除 search 块")
+                    ])
+                ]),
+                "required": .array([.string("path"), .string("search"), .string("replace")])
             ])
         )
     }
@@ -124,6 +155,11 @@ nonisolated struct FileTools {
                     "path": entry.path,
                     "size": entry.size
                 ])
+            case "file_patch":
+                let path = args["path"] as? String ?? ""
+                let search = args["search"] as? String ?? ""
+                let replace = args["replace"] as? String ?? ""
+                return applyPatch(fs: fs, sessionId: sessionId, path: path, search: search, replace: replace)
             case "file_read":
                 let path = args["path"] as? String ?? ""
                 let text = try fs.read(path)
@@ -176,6 +212,8 @@ nonisolated struct FileTools {
             } catch {
                 return "✗ write failed: \(error)"
             }
+        case .patch(let path, let search, let replace):
+            return applyPatch(fs: fs, sessionId: sessionId, path: path, search: search, replace: replace)
         case .read(let path):
             do {
                 let text = try fs.read(path)
@@ -212,6 +250,72 @@ nonisolated struct FileTools {
         case .unknown(let name, let raw):
             return "✗ unknown command: \(name) — \(raw.prefix(80))"
         }
+    }
+
+    // MARK: - 局部替换核心逻辑（函数调用与 CLI 共用）
+
+    /// 对文件执行 SEARCH/REPLACE 局部替换
+    /// - 要求 search 在文件中唯一匹配；0 或多次匹配均失败
+    private static func applyPatch(
+        fs: FileSystemStore,
+        sessionId: UUID,
+        path: String,
+        search: String,
+        replace: String
+    ) -> String {
+        guard !path.isEmpty else {
+            return errorJSON("invalid_args", "path 不能为空")
+        }
+        guard !search.isEmpty else {
+            return errorJSON("invalid_args", "search 不能为空（如需清空整个文件请用 file_write）")
+        }
+        guard fs.exists(path) else {
+            return errorJSON("not_found", "文件不存在：\(path)（请先用 file_write 创建）")
+        }
+
+        let original: String
+        do {
+            original = try fs.read(path)
+        } catch {
+            return errorJSON("read_error", "读取失败：\(error)")
+        }
+
+        let matchCount = Self.occurrences(of: search, in: original)
+        if matchCount == 0 {
+            return errorJSON("not_found", "search 块在文件中未找到匹配。请确认缩进/换行是否完全一致，或先用 file_read 查看当前内容。")
+        }
+        if matchCount > 1 {
+            return errorJSON("ambiguous", "search 块在文件中匹配了 \(matchCount) 次。请在 search 中补充更多上下文行使其唯一。")
+        }
+
+        guard let range = original.range(of: search) else {
+            return errorJSON("internal", "替换失败")
+        }
+        let updated = original.replacingCharacters(in: range, with: replace)
+
+        do {
+            let entry = try fs.write(content: updated, to: path)
+            FileSystemNotifier.shared.notify(sessionId: sessionId, path: path, kind: .write)
+            return successJSON([
+                "path": entry.path,
+                "size": entry.size,
+                "replaced": 1
+            ])
+        } catch {
+            return errorJSON("write_error", "写入失败：\(error)")
+        }
+    }
+
+    /// 统计子串出现次数（非正则，逐次推进 upperBound）
+    private static func occurrences(of needle: String, in haystack: String) -> Int {
+        var count = 0
+        var searchStart = haystack.startIndex
+        while searchStart < haystack.endIndex,
+              let range = haystack.range(of: needle, range: searchStart..<haystack.endIndex) {
+            count += 1
+            searchStart = range.upperBound
+        }
+        return count
     }
 
     // MARK: - JSON 工具

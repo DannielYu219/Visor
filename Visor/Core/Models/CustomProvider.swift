@@ -11,6 +11,36 @@ struct CustomModelInfo: Codable, Identifiable, Hashable, Sendable {
     var supportsVision: Bool
 }
 
+/// DeepSeek 思考模式（含强度控制）
+///
+/// - `disabled`: 关闭思考模式
+/// - `high`: 开启思考，强度 high（默认，适用于普通请求）
+/// - `max`: 开启思考，强度 max（适用于复杂 Agent 类请求）
+///
+/// 参考: https://api-docs.deepseek.com/zh-cn/guides/thinking_mode
+enum DeepSeekThinkingMode: String, Codable, CaseIterable, Sendable {
+    case disabled = "disabled"
+    case high     = "high"
+    case max      = "max"
+
+    var displayName: String {
+        switch self {
+        case .disabled: return "关闭"
+        case .high:     return "高"
+        case .max:      return "最大"
+        }
+    }
+
+    /// 是否开启思考模式
+    var isEnabled: Bool { self != .disabled }
+
+    /// API 请求体中的 reasoning_effort 值（仅 enabled 时使用）
+    var reasoningEffort: String? {
+        guard isEnabled else { return nil }
+        return rawValue
+    }
+}
+
 /// 自定义服务商分组配置（OpenAI 兼容格式）
 struct CustomProviderConfig: Codable, Identifiable, Hashable, Sendable {
     /// 唯一标识
@@ -23,19 +53,28 @@ struct CustomProviderConfig: Codable, Identifiable, Hashable, Sendable {
     var models: [CustomModelInfo]
     /// 创建时间
     var createdAt: Date
+    /// DeepSeek 思考模式（仅 isDeepSeek 生效）
+    var thinkingMode: DeepSeekThinkingMode = .disabled
+
+    /// 检测是否为 DeepSeek 服务商
+    var isDeepSeek: Bool {
+        baseURL.lowercased().contains("deepseek")
+    }
 
     init(
         id: UUID = UUID(),
         name: String,
         baseURL: String,
         models: [CustomModelInfo] = [],
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        thinkingMode: DeepSeekThinkingMode = .disabled
     ) {
         self.id = id
         self.name = name
         self.baseURL = baseURL
         self.models = models
         self.createdAt = createdAt
+        self.thinkingMode = thinkingMode
     }
 
     /// Keychain 中存储 API Key 的 account 名

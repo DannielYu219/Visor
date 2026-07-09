@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// Sheet 编辑目标（Identifiable，解决 `isPresented` + `editingProvider` 的时序竞态）
+private struct ProviderEditTarget: Identifiable {
+    let id = UUID()
+    let config: CustomProviderConfig?  // nil = 新增
+}
+
 /// 设置页
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -11,8 +17,7 @@ struct SettingsView: View {
 
     // 自定义服务商
     @State private var customProviders: [CustomProviderConfig] = []
-    @State private var showProviderEditor: Bool = false
-    @State private var editingProvider: CustomProviderConfig?
+    @State private var editingTarget: ProviderEditTarget?
 
     enum SaveStatus: Equatable {
         case idle
@@ -109,8 +114,7 @@ struct SettingsView: View {
                                 .font(.visorTitle)
                             Spacer()
                             Button {
-                                editingProvider = nil
-                                showProviderEditor = true
+                                editingTarget = ProviderEditTarget(config: nil)
                             } label: {
                                 Label("添加", systemImage: "plus")
                                     .font(.visorCaption)
@@ -201,9 +205,9 @@ struct SettingsView: View {
                 }
                 reloadCustomProviders()
             }
-            .sheet(isPresented: $showProviderEditor, onDismiss: { reloadCustomProviders() }) {
+            .sheet(item: $editingTarget, onDismiss: { reloadCustomProviders() }) { target in
                 CustomProviderEditorSheet(
-                    editing: editingProvider,
+                    editing: target.config,
                     onSave: { config, apiKey in
                         saveCustomProvider(config, apiKey: apiKey)
                     }
@@ -237,8 +241,7 @@ struct SettingsView: View {
                 }
                 Spacer()
                 Button {
-                    editingProvider = config
-                    showProviderEditor = true
+                    editingTarget = ProviderEditTarget(config: config)
                 } label: {
                     Image(systemName: "square.and.pencil")
                         .font(.system(size: 16))
@@ -362,6 +365,19 @@ struct CustomProviderEditorSheet: View {
     @State private var models: [EditableModel] = []
     @State private var errorMessage: String?
     @State private var hasExistingKey: Bool = false
+    @State private var thinkingMode: DeepSeekThinkingMode = .disabled
+    @State private var isTesting: Bool = false
+    @State private var testResult: TestResult?
+
+    enum TestResult {
+        case success(modelCount: Int)
+        case failure(String)
+    }
+
+    /// 当前 URL 是否被检测为 DeepSeek
+    private var detectedDeepSeek: Bool {
+        baseURL.lowercased().contains("deepseek")
+    }
 
     /// 可编辑模型（UUID 身份，避免空 ID 冲突）
     struct EditableModel: Identifiable {
@@ -435,6 +451,57 @@ struct CustomProviderEditorSheet: View {
                         }
                         if hasExistingKey && apiKey.isEmpty {
                             Text("已配置 API Key（留空则保持不变）")
+                                .font(.visorCaption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        // 联通性测试按钮
+                        HStack(spacing: DesignTokens.Spacing.s) {
+                            Button {
+                                testConnectivity()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    if isTesting {
+                                        ProgressView()
+                                            .scaleEffect(0.7)
+                                    } else {
+                                        Image(systemName: "antenna.radiowaves.left.and.right")
+                                    }
+                                    Text(isTesting ? "测试中…" : "测试连接")
+                                }
+                                .font(.visorCaption)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(isTesting)
+
+                            if let result = testResult {
+                                switch result {
+                                case .success(let count):
+                                    Text("✓ 已连接，\(count) 个模型")
+                                        .font(.visorCaption)
+                                        .foregroundStyle(Color.visorStatusSuccessText)
+                                case .failure(let msg):
+                                    Text("✗ \(msg)")
+                                        .font(.visorCaption)
+                                        .foregroundStyle(Color.visorStatusFailedText)
+                                }
+                            }
+                        }
+                    }
+
+                    // DeepSeek 思考模式（仅在检测到 DeepSeek 时显示）
+                    if detectedDeepSeek {
+                        VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
+                            Text("DeepSeek 思考模式")
+                                .font(.visorTitle)
+                            Picker("思考强度", selection: $thinkingMode) {
+                                ForEach(DeepSeekThinkingMode.allCases, id: \.self) { mode in
+                                    Text(mode.displayName).tag(mode)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            Text("高 — 适用于普通任务；最大 — 适用于复杂 Agent 任务")
                                 .font(.visorCaption)
                                 .foregroundStyle(.secondary)
                         }
@@ -517,7 +584,7 @@ struct CustomProviderEditorSheet: View {
     private func modelRow(_ model: Binding<EditableModel>) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             HStack(spacing: DesignTokens.Spacing.s) {
-                TextField("模型 ID", text: model.modelId)
+                TextField("模型 ID（如 deepseek-v4-pro）", text: model.modelId)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.visorBody)
@@ -552,8 +619,74 @@ struct CustomProviderEditorSheet: View {
         name = editing.name
         baseURL = editing.baseURL
         models = editing.models.map { EditableModel(modelId: $0.id, displayName: $0.displayName, supportsVision: $0.supportsVision) }
+        thinkingMode = editing.thinkingMode
         // 检查是否已有 API Key（不读取明文到内存，仅标记）
         hasExistingKey = CustomProviderRegistry.shared.apiKey(for: editing.id) != nil
+    }
+
+    // MARK: - 联通性测试
+
+    private func testConnectivity() {
+        let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedURL.isEmpty, let base = URL(string: trimmedURL) else {
+            testResult = .failure("Base URL 无效")
+            return
+        }
+
+        let key: String
+        if !apiKey.isEmpty {
+            key = apiKey
+        } else if let existing = editing.flatMap({ CustomProviderRegistry.shared.apiKey(for: $0.id) }) {
+            key = existing
+        } else {
+            testResult = .failure("请先输入 API Key")
+            return
+        }
+
+        isTesting = true
+        testResult = nil
+
+        let url = base.appendingPathComponent("models")
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        req.timeoutInterval = 10
+
+        Task {
+            do {
+                let (data, resp) = try await URLSession.shared.data(for: req)
+                guard let http = resp as? HTTPURLResponse else {
+                    await MainActor.run {
+                        isTesting = false
+                        testResult = .failure("响应格式异常")
+                    }
+                    return
+                }
+                await MainActor.run {
+                    isTesting = false
+                    if http.statusCode == 200 {
+                        // 尝试解析模型列表计数
+                        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                           let list = json["data"] as? [[String: Any]] {
+                            testResult = .success(modelCount: list.count)
+                        } else {
+                            testResult = .success(modelCount: 0)
+                        }
+                    } else if http.statusCode == 401 || http.statusCode == 403 {
+                        testResult = .failure("API Key 无效（\(http.statusCode)）")
+                    } else {
+                        let body = String(data: data, encoding: .utf8) ?? ""
+                        let preview = String(body.prefix(80))
+                        testResult = .failure("HTTP \(http.statusCode): \(preview)")
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isTesting = false
+                    testResult = .failure(error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func save() {
@@ -571,10 +704,15 @@ struct CustomProviderEditorSheet: View {
             let mid = m.modelId.trimmingCharacters(in: .whitespacesAndNewlines)
             let dname = m.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !mid.isEmpty, !dname.isEmpty else { return nil }
+            // 防止将 Base URL 误填为模型 ID
+            if mid.lowercased().hasPrefix("http://") || mid.lowercased().hasPrefix("https://") {
+                errorMessage = "模型 ID「\(mid)」看起来像 URL，请填写模型名称（如 deepseek-v4-pro）"
+                return nil
+            }
             return CustomModelInfo(id: mid, displayName: dname, supportsVision: m.supportsVision)
         }
-        guard !validModels.isEmpty else {
-            errorMessage = "至少添加一个有效的模型（需填写 ID 和显示名称）"
+        guard !validModels.isEmpty, errorMessage == nil else {
+            if errorMessage == nil { errorMessage = "至少添加一个有效的模型（需填写 ID 和显示名称）" }
             return
         }
 
@@ -584,7 +722,8 @@ struct CustomProviderEditorSheet: View {
             name: trimmedName,
             baseURL: trimmedURL,
             models: validModels,
-            createdAt: editing?.createdAt ?? Date()
+            createdAt: editing?.createdAt ?? Date(),
+            thinkingMode: thinkingMode
         )
         // 如果编辑时未输入新 Key 且已有 Key，传空串表示保持不变
         onSave(config, apiKey)

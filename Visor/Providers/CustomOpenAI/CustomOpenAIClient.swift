@@ -56,12 +56,25 @@ final class CustomOpenAIClient: ModelProvider, @unchecked Sendable {
                         return
                     }
                     guard (200..<300).contains(http.statusCode) else {
-                        let bodyData = try? await URLSession.shared.data(for: req).0
+                        // 从流中读取错误正文，不做第二次请求
+                        var bodyLines: [String] = []
+                        do {
+                            for try await line in bytes.lines.prefix(5) {
+                                bodyLines.append(line)
+                            }
+                        } catch { }
+                        let raw = bodyLines.joined(separator: "\n")
                         var msg = "HTTP \(http.statusCode)"
-                        if let bodyData,
-                           let payload = try? JSONDecoder().decode(ErrorPayload.self, from: bodyData),
+                        if let data = raw.data(using: .utf8),
+                           let payload = try? JSONDecoder().decode(ErrorPayload.self, from: data),
                            let err = payload.error {
                             msg = "[\(err.code ?? http.statusCode)] \(err.message ?? "未知错误")"
+                        } else if !raw.isEmpty {
+                            msg += ": \(String(raw.prefix(200)))"
+                        }
+                        // 日志记录请求体便于调试
+                        if let body = req.httpBody, let bodyStr = String(data: body, encoding: .utf8) {
+                            self.logger.error("Request failed: \(msg, privacy: .public)\nBody: \(String(bodyStr.prefix(500)), privacy: .public)")
                         }
                         continuation.finish(throwing: ProviderError.serverError(code: http.statusCode, message: msg))
                         return
@@ -98,14 +111,20 @@ final class CustomOpenAIClient: ModelProvider, @unchecked Sendable {
         req.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         req.timeoutInterval = 0
 
-        let body = RequestBody(
+        var body = RequestBody(
             model: modelId,
             messages: messages,
             stream: true,
             tools: tools.isEmpty ? nil : tools,
-            tool_choice: tools.isEmpty ? nil : "auto",
-            stream_options: ["include_usage": .bool(true)]
+            tool_choice: tools.isEmpty ? nil : "auto"
         )
+        // DeepSeek 思考模式 + 思考强度
+        if config.isDeepSeek, config.thinkingMode.isEnabled {
+            body.thinking = ["type": .string("enabled")]
+            if let effort = config.thinkingMode.reasoningEffort {
+                body.reasoning_effort = .string(effort)
+            }
+        }
         req.httpBody = try? JSONEncoder().encode(body)
         return req
     }
@@ -116,7 +135,14 @@ final class CustomOpenAIClient: ModelProvider, @unchecked Sendable {
         let stream: Bool
         let tools: [ToolDefinition]?
         let tool_choice: String?
-        let stream_options: [String: JSONValue]
+        var thinking: [String: JSONValue]?          // DeepSeek thinking parameter
+        var reasoning_effort: JSONValue?            // DeepSeek reasoning effort
+
+        enum CodingKeys: String, CodingKey {
+            case model, messages, stream, tools
+            case tool_choice, thinking
+            case reasoning_effort
+        }
     }
 
     // MARK: - SSE Parsing（纯后台，无 MainActor）
@@ -169,6 +195,7 @@ final class CustomOpenAIClient: ModelProvider, @unchecked Sendable {
                 let role: String?
                 let content: String?
                 let reasoning: String?
+                let reasoning_content: String?  // DeepSeek API 字段
                 let tool_calls: [ToolCallWire]?
             }
             let delta: Delta
@@ -196,7 +223,7 @@ final class CustomOpenAIClient: ModelProvider, @unchecked Sendable {
             var d = StreamDelta()
             if let first = choices.first {
                 d.contentDelta = first.delta.content
-                d.reasoningDelta = first.delta.reasoning
+                d.reasoningDelta = first.delta.reasoning ?? first.delta.reasoning_content
                 d.finishReason = first.finish_reason
                 if let tcs = first.delta.tool_calls, !tcs.isEmpty {
                     d.toolCallDeltas = tcs.map { tc in

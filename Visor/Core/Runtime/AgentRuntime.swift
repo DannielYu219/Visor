@@ -133,7 +133,7 @@ final class AgentRuntime: @unchecked Sendable {
 ## 当前 session 文件清单
 \(fileContext)
 
-用户说「修改某个文件」时，请先用 file_read 读取该文件，再用 file_write 覆盖。不要凭空猜测文件内容。
+用户说「修改某个文件」时，请先用 file_read 读取该文件，再用 file_patch 做局部替换（不要用 file_write 覆盖整个文件，除非改动极大）。不要凭空猜测文件内容。
 """
 
         let combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLISkillFragment + fileContextFragment
@@ -385,11 +385,23 @@ private let visorCLISkillFragment: String = """
 
 ### 强制工作流
 1. **先说话**：用 1-2 句中文告诉用户你打算做什么
-2. **再调用工具**：调用 `file_write` 把文件落到工作目录
+2. **再调用工具**：把改动落到工作目录
 3. **最后总结**：工具返回后，用 1-2 句中文总结
 
 ### 工具
-- `file_write`：参数 `path`（相对路径如 `index.html`）+ `content`（文件内容）
+- `file_write`：参数 `path`（相对路径如 `index.html`）+ `content`（完整文件内容）。**仅用于新建文件，或用户强烈要求重构整个文件时。**
+- `file_patch`：参数 `path` + `search`（要替换的原文）+ `replace`（替换后的内容）。**修改已有文件时必须优先使用此工具**，只需发送变更片段，极大节约 token 并显著提升速度。`search` 必须是文件中的精确片段（含缩进/换行）且唯一匹配；`replace` 为空串表示删除该片段。若 0 匹配请先用 `file_read` 核对内容；若多次匹配请在 `search` 中补充更多上下文行使其唯一。
+- `file_read`：参数 `path`，读取文件内容。
+- `file_list`：列出 session 内所有文件。
+- `file_remove`：参数 `path`，删除文件。
+- `file_mkdir`：参数 `path`，创建子目录。
+
+### 修改文件的优先级（重要）
+1. **修改已有文件 → 优先 `file_patch`**（局部替换，只传变更部分）
+2. **新建文件 → 用 `file_write`**（完整内容）
+3. **用户明确要求「重写/重构整个文件」→ 才用 `file_write`**（覆盖完整内容）
+
+不要用 `file_write` 覆盖整个文件来修改几行——这会浪费大量 token 并拖慢响应。
 
 ### 文件组织
 画布自动读取 `index.html` 并实时刷新。按文件组织：
