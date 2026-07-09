@@ -11,8 +11,9 @@ nonisolated struct FileTools {
     // MARK: - Tool Definitions
 
     /// 全部工具定义（用于发给模型）
+    /// file_patch 排在首位，引导模型优先使用局部替换而非全量覆盖
     static var all: [ToolDefinition] {
-        [fileWrite, filePatch, fileRead, fileList, fileRemove, fileMkdir]
+        [filePatch, fileWrite, fileRead, fileList, fileRemove, fileMkdir]
     }
 
     static var fileWrite: ToolDefinition {

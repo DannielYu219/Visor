@@ -250,10 +250,10 @@ final class AgentRuntime: @unchecked Sendable {
             }
 
             // 验证 arguments JSON
-            var validToolCalls: [ToolCall] = []
+            var validToolCalls: [(call: ToolCall, wasRepaired: Bool)] = []
             for tc in toolCalls {
                 if isValidJSON(tc.function.arguments) {
-                    validToolCalls.append(tc)
+                    validToolCalls.append((call: tc, wasRepaired: false))
                     log(continuation, "✓ tool_call \(tc.function.name) args valid (\(tc.function.arguments.count) chars)")
                 } else {
                     // 尝试修复未闭合的 JSON（长内容流式截断常见）
@@ -264,7 +264,7 @@ final class AgentRuntime: @unchecked Sendable {
                             type: tc.type,
                             function: .init(name: tc.function.name, arguments: repaired)
                         )
-                        validToolCalls.append(fixed)
+                        validToolCalls.append((call: fixed, wasRepaired: true))
                         log(continuation, "⚠ tool_call \(tc.function.name) args repaired (\(tc.function.arguments.count) → \(repaired.count) chars)")
                     } else {
                         log(continuation, "✗ tool_call \(tc.function.name) args INVALID (\(tc.function.arguments.count) chars): \(tc.function.arguments.prefix(200))")
@@ -277,13 +277,24 @@ final class AgentRuntime: @unchecked Sendable {
                 break
             }
 
-            let assistantMsg = Message.assistant(textAccum.isEmpty ? nil : textAccum, toolCalls: validToolCalls)
+            let assistantMsg = Message.assistant(textAccum.isEmpty ? nil : textAccum, toolCalls: validToolCalls.map { $0.call })
             messages.append(assistantMsg)
             continuation.yield(.assistantMessage(assistantMsg))
             log(continuation, "✓ assistant message yielded")
 
             // 执行工具
-            for tc in validToolCalls {
+            for entry in validToolCalls {
+                let tc = entry.call
+                // 写操作工具若参数因流式截断被修复，replace/content 可能为空——
+                // 直接执行会误删文件内容或写入截断内容，必须跳过并要求重试
+                if entry.wasRepaired && (tc.function.name == "file_patch" || tc.function.name == "file_write") {
+                    log(continuation, "⚠ skipping \(tc.function.name): args repaired (truncated), requesting retry")
+                    let result = #"{"error":"truncated_args","ok":false,"message":"参数因流式截断被修复，为防止误删/写入空内容已跳过执行。请重新调用并确保参数完整；若内容较大请用 file_patch 做局部替换（payload 更小不易截断）。"}"#
+                    let toolMsg = Message(role: "tool", content: .text(result), toolCallId: tc.id, name: tc.function.name)
+                    messages.append(toolMsg)
+                    continuation.yield(.toolMessage(toolMsg))
+                    continue
+                }
                 log(continuation, "▶ executing \(tc.function.name)...")
                 let result = FileTools.execute(name: tc.function.name, argumentsJSON: tc.function.arguments, fs: fs, sessionId: sessionId)
                 log(continuation, "✓ tool result: \(result.prefix(200))")
@@ -388,20 +399,21 @@ private let visorCLISkillFragment: String = """
 2. **再调用工具**：把改动落到工作目录
 3. **最后总结**：工具返回后，用 1-2 句中文总结
 
-### 工具
-- `file_write`：参数 `path`（相对路径如 `index.html`）+ `content`（完整文件内容）。**仅用于新建文件，或用户强烈要求重构整个文件时。**
-- `file_patch`：参数 `path` + `search`（要替换的原文）+ `replace`（替换后的内容）。**修改已有文件时必须优先使用此工具**，只需发送变更片段，极大节约 token 并显著提升速度。`search` 必须是文件中的精确片段（含缩进/换行）且唯一匹配；`replace` 为空串表示删除该片段。若 0 匹配请先用 `file_read` 核对内容；若多次匹配请在 `search` 中补充更多上下文行使其唯一。
-- `file_read`：参数 `path`，读取文件内容。
+### 工具（按优先级排列）
+- `file_patch`：**修改已有文件的首选工具**。参数 `path` + `search`（要替换的原文）+ `replace`（替换后的内容）。只发送变更片段，极大节约 token 并显著提升速度，且不易因流式截断出错。`search` 必须是文件中的精确片段（含缩进/换行）且唯一匹配；`replace` 为空串表示删除该片段。若 0 匹配请先用 `file_read` 核对内容；若多次匹配请在 `search` 中补充更多上下文行使其唯一。
+- `file_write`：参数 `path`（相对路径如 `index.html`）+ `content`（完整文件内容）。**仅用于新建文件，或用户明确要求重写/重构整个文件时。** 修改已有文件时禁止用 file_write 覆盖——长内容易被流式截断导致写入空/截断内容。
+- `file_read`：参数 `path`，读取文件内容。修改文件前若不确定精确内容，先 read 再 patch。
 - `file_list`：列出 session 内所有文件。
 - `file_remove`：参数 `path`，删除文件。
 - `file_mkdir`：参数 `path`，创建子目录。
 
-### 修改文件的优先级（重要）
-1. **修改已有文件 → 优先 `file_patch`**（局部替换，只传变更部分）
-2. **新建文件 → 用 `file_write`**（完整内容）
-3. **用户明确要求「重写/重构整个文件」→ 才用 `file_write`**（覆盖完整内容）
+### 修改文件的决策树（必须遵守）
+- 文件已存在且只需改几行/一段？→ **`file_patch`**（禁止用 file_write 覆盖）
+- 文件不存在，需要新建？→ **`file_write`**（完整内容）
+- 用户明确说「重写整个文件 / 推翻重来」？→ **`file_write`**（完整内容）
+- 其他修改场景？→ **默认 `file_patch`**
 
-不要用 `file_write` 覆盖整个文件来修改几行——这会浪费大量 token 并拖慢响应。
+用 `file_write` 覆盖整个文件来修改几行是严重错误：浪费 token、拖慢响应、且长 content 易被流式截断导致文件损坏。
 
 ### 文件组织
 画布自动读取 `index.html` 并实时刷新。按文件组织：
