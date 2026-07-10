@@ -77,7 +77,7 @@ struct MessageBubble: View {
                             VStack(spacing: DesignTokens.Spacing.xs) {
                                 Image(systemName: "photo.badge.exclamationmark")
                                     .font(.system(size: 24))
-                                Text("图片解码失败")
+                                Text("message.image.decodeFailed".l)
                                     .font(.visorCaption)
                             }
                             .foregroundStyle(.secondary)
@@ -135,7 +135,7 @@ struct MessageBubble: View {
                 HStack(spacing: 4) {
                     Image(systemName: "brain.head.profile")
                         .font(.system(size: 11))
-                    Text("思考过程")
+                    Text("message.reasoning.title".l)
                         .font(.visorCaption)
                     Image(systemName: reasoningExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 9))

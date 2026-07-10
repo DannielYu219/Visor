@@ -18,11 +18,11 @@ nonisolated enum KeychainStore {
         var errorDescription: String? {
             switch self {
             case .unhandled(let status):
-                return "Keychain 错误（OSStatus \(status)）"
+                return "keychain.error.unhandled".l(status)
             case .dataConversion:
-                return "Keychain 数据转换失败"
+                return "keychain.error.dataConversion".l
             case .notFound:
-                return "Keychain 未找到对应项"
+                return "keychain.error.notFound".l
             }
         }
     }

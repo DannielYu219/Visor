@@ -19,6 +19,9 @@ struct SettingsView: View {
     @State private var customProviders: [CustomProviderConfig] = []
     @State private var editingTarget: ProviderEditTarget?
 
+    // 语言
+    @ObservedObject private var languageManager = LanguageManager.shared
+
     enum SaveStatus: Equatable {
         case idle
         case saved
@@ -29,17 +32,43 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.xl) {
+                    // 语言卡片
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
+                        Text("settings.language.title".l)
+                            .font(.visorTitle)
+                        Text("settings.language.subtitle".l)
+                            .font(.visorCaption)
+                            .foregroundStyle(.secondary)
+                        Picker("", selection: $languageManager.selected) {
+                            ForEach(AppLanguage.allCases) { lang in
+                                Text(lang.displayName).tag(lang)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                    }
+                    .padding(DesignTokens.Spacing.xxl)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .fill(Color.visorBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.04), radius: 16, y: 4)
+
                     // API Key 卡片
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
-                        Text("OpenRouter API Key")
+                        Text("settings.apikey.title".l)
                             .font(.visorTitle)
 
                         HStack(spacing: DesignTokens.Spacing.s) {
                             Group {
                                 if showKey {
-                                    TextField("API Key", text: $apiKeyInput)
+                                    TextField("settings.apikey.placeholder".l, text: $apiKeyInput)
                                 } else {
-                                    SecureField("API Key", text: $apiKeyInput)
+                                    SecureField("settings.apikey.placeholder".l, text: $apiKeyInput)
                                 }
                             }
                             .textContentType(.password)
@@ -63,17 +92,17 @@ struct SettingsView: View {
                                 size: DesignTokens.Touch.compact,
                                 action: { showKey.toggle() }
                             )
-                            .accessibilityLabel(showKey ? "隐藏 API Key" : "显示 API Key")
+                            .accessibilityLabel(showKey ? "settings.apikey.hide".l : "settings.apikey.show".l)
                         }
 
                         HStack(spacing: DesignTokens.Spacing.s) {
-                            Button("保存到 Keychain") {
+                            Button("settings.apikey.save".l) {
                                 saveKey()
                             }
                             .buttonStyle(.borderedProminent)
                             .controlSize(.small)
 
-                            Button("清除已保存的 Key", role: .destructive) {
+                            Button("settings.apikey.clear".l, role: .destructive) {
                                 KeychainStore.openRouterAPIKey = nil
                                 apiKeyInput = ""
                                 saveStatus = .idle
@@ -87,7 +116,7 @@ struct SettingsView: View {
                         case .idle:
                             EmptyView()
                         case .saved:
-                            Text("已保存")
+                            Text("settings.apikey.saved".l)
                                 .font(.visorCaption)
                                 .foregroundStyle(Color.visorStatusSuccessText)
                         case .error(let msg):
@@ -110,13 +139,13 @@ struct SettingsView: View {
                     // 自定义服务商卡片
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
                         HStack {
-                            Text("自定义服务商")
+                            Text("settings.customProvider.title".l)
                                 .font(.visorTitle)
                             Spacer()
                             Button {
                                 editingTarget = ProviderEditTarget(config: nil)
                             } label: {
-                                Label("添加", systemImage: "plus")
+                                Label("common.add".l, systemImage: "plus")
                                     .font(.visorCaption)
                             }
                             .buttonStyle(.bordered)
@@ -124,7 +153,7 @@ struct SettingsView: View {
                         }
 
                         if customProviders.isEmpty {
-                            Text("添加 OpenAI 兼容的自定义服务商（如 OpenAI、Together、Groq 等）")
+                            Text("settings.customProvider.empty".l)
                                 .font(.visorCaption)
                                 .foregroundStyle(.secondary)
                         } else {
@@ -146,7 +175,7 @@ struct SettingsView: View {
 
                     // 预算卡片
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
-                        Text("预算（USD）")
+                        Text("settings.budget.title".l)
                             .font(.visorTitle)
                         BudgetEditor(budgetGuard: budgetGuard)
                     }
@@ -163,7 +192,7 @@ struct SettingsView: View {
 
                     // 模型定价卡片
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-                        Text("模型定价（实时）")
+                        Text("settings.pricing.title".l)
                             .font(.visorTitle)
                         ForEach(OpenRouterModels.catalog, id: \.id) { info in
                             if let p = ModelPricingTable.shared.pricing(for: info.id) {
@@ -171,7 +200,7 @@ struct SettingsView: View {
                                     Text(info.displayName)
                                         .font(.visorBody)
                                     Spacer()
-                                    Text(String(format: "in $%.2f / out $%.2f", p.inputPricePerMTokensUSD, p.outputPricePerMTokensUSD))
+                                    Text("settings.pricing.row".l(p.inputPricePerMTokensUSD, p.outputPricePerMTokensUSD))
                                         .font(.visorCaption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -193,10 +222,10 @@ struct SettingsView: View {
                 .padding(DesignTokens.Spacing.l)
             }
             .background(Color.visorSecondaryBackground)
-            .navigationTitle("设置")
+            .navigationTitle("settings.title".l)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { dismiss() }
+                    Button("common.done".l) { dismiss() }
                 }
             }
             .onAppear {
@@ -235,7 +264,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    Text("\(config.models.count) 个模型")
+                    Text("settings.customProvider.modelCount".l(config.models.count))
                         .font(.visorCaption)
                         .foregroundStyle(.secondary)
                 }
@@ -247,7 +276,7 @@ struct SettingsView: View {
                         .font(.system(size: 16))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("编辑")
+                .accessibilityLabel("common.edit".l)
 
                 Button(role: .destructive) {
                     deleteCustomProvider(config)
@@ -257,7 +286,7 @@ struct SettingsView: View {
                         .foregroundStyle(Color.visorStatusFailedText)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("删除")
+                .accessibilityLabel("common.delete".l)
             }
         }
         .padding(DesignTokens.Spacing.s)
@@ -293,7 +322,7 @@ struct SettingsView: View {
     private func saveKey() {
         let trimmed = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            saveStatus = .error("API Key 不能为空")
+            saveStatus = .error("settings.apikey.empty".l)
             return
         }
         do {
@@ -314,11 +343,11 @@ struct BudgetEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-            stepperRow(label: "会话", value: $sessionUSD)
-            stepperRow(label: "日", value: $dailyUSD)
-            stepperRow(label: "月", value: $monthlyUSD)
+            stepperRow(label: "settings.budget.session".l, value: $sessionUSD)
+            stepperRow(label: "settings.budget.daily".l, value: $dailyUSD)
+            stepperRow(label: "settings.budget.monthly".l, value: $monthlyUSD)
 
-            Button("应用预算") {
+            Button("settings.budget.apply".l) {
                 budgetGuard.update(limit: .init(
                     sessionUSD: sessionUSD,
                     dailyUSD: dailyUSD,
@@ -395,36 +424,36 @@ struct CustomProviderEditorSheet: View {
                 VStack(alignment: .leading, spacing: DesignTokens.Spacing.l) {
                     // 基础信息
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-                        Text("服务商信息")
+                        Text("provider.editor.section.info".l)
                             .font(.visorTitle)
 
-                        labeledField("名称") {
-                            TextField("如：我的 OpenAI", text: $name)
+                        labeledField("provider.editor.name".l) {
+                            TextField("provider.editor.name.placeholder".l, text: $name)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                         }
 
-                        labeledField("Base URL") {
+                        labeledField("provider.editor.baseURL".l) {
                             TextField("https://api.openai.com/v1", text: $baseURL)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .keyboardType(.URL)
                         }
-                        Text("OpenAI 兼容格式，需包含 /v1 路径")
+                        Text("provider.editor.baseURL.hint".l)
                             .font(.visorCaption)
                             .foregroundStyle(.secondary)
                     }
 
                     // API Key
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-                        Text("API Key")
+                        Text("provider.editor.apiKey.title".l)
                             .font(.visorTitle)
                         HStack(spacing: DesignTokens.Spacing.s) {
                             Group {
                                 if showAPIKey {
-                                    TextField("API Key", text: $apiKey)
+                                    TextField("provider.editor.apiKey.placeholder".l, text: $apiKey)
                                 } else {
-                                    SecureField("API Key", text: $apiKey)
+                                    SecureField("provider.editor.apiKey.placeholder".l, text: $apiKey)
                                 }
                             }
                             .textContentType(.password)
@@ -450,7 +479,7 @@ struct CustomProviderEditorSheet: View {
                             )
                         }
                         if hasExistingKey && apiKey.isEmpty {
-                            Text("已配置 API Key（留空则保持不变）")
+                            Text("provider.editor.apiKey.existing".l)
                                 .font(.visorCaption)
                                 .foregroundStyle(.secondary)
                         }
@@ -467,7 +496,7 @@ struct CustomProviderEditorSheet: View {
                                     } else {
                                         Image(systemName: "antenna.radiowaves.left.and.right")
                                     }
-                                    Text(isTesting ? "测试中…" : "测试连接")
+                                    Text(isTesting ? "provider.editor.testing".l : "provider.editor.test".l)
                                 }
                                 .font(.visorCaption)
                             }
@@ -478,11 +507,11 @@ struct CustomProviderEditorSheet: View {
                             if let result = testResult {
                                 switch result {
                                 case .success(let count):
-                                    Text("✓ 已连接，\(count) 个模型")
+                                    Text("provider.editor.test.success".l(count))
                                         .font(.visorCaption)
                                         .foregroundStyle(Color.visorStatusSuccessText)
                                 case .failure(let msg):
-                                    Text("✗ \(msg)")
+                                    Text("provider.editor.test.failure".l(msg))
                                         .font(.visorCaption)
                                         .foregroundStyle(Color.visorStatusFailedText)
                                 }
@@ -493,15 +522,15 @@ struct CustomProviderEditorSheet: View {
                     // DeepSeek 思考模式（仅在检测到 DeepSeek 时显示）
                     if detectedDeepSeek {
                         VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-                            Text("DeepSeek 思考模式")
+                            Text("provider.editor.deepseek.title".l)
                                 .font(.visorTitle)
-                            Picker("思考强度", selection: $thinkingMode) {
+                            Picker("provider.editor.deepseek.intensity".l, selection: $thinkingMode) {
                                 ForEach(DeepSeekThinkingMode.allCases, id: \.self) { mode in
                                     Text(mode.displayName).tag(mode)
                                 }
                             }
                             .pickerStyle(.segmented)
-                            Text("高 — 适用于普通任务；最大 — 适用于复杂 Agent 任务")
+                            Text("provider.editor.deepseek.hint".l)
                                 .font(.visorCaption)
                                 .foregroundStyle(.secondary)
                         }
@@ -510,13 +539,13 @@ struct CustomProviderEditorSheet: View {
                     // 模型列表
                     VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
                         HStack {
-                            Text("模型列表")
+                            Text("provider.editor.models.title".l)
                                 .font(.visorTitle)
                             Spacer()
                             Button {
                                 models.append(EditableModel())
                             } label: {
-                                Label("添加模型", systemImage: "plus")
+                                Label("provider.editor.models.add".l, systemImage: "plus")
                                     .font(.visorCaption)
                             }
                             .buttonStyle(.bordered)
@@ -524,7 +553,7 @@ struct CustomProviderEditorSheet: View {
                         }
 
                         if models.isEmpty {
-                            Text("至少添加一个模型")
+                            Text("provider.editor.models.empty".l)
                                 .font(.visorCaption)
                                 .foregroundStyle(.secondary)
                         } else {
@@ -543,14 +572,14 @@ struct CustomProviderEditorSheet: View {
                 .padding(DesignTokens.Spacing.l)
             }
             .background(Color.visorSecondaryBackground)
-            .navigationTitle(isNew ? "添加自定义服务商" : "编辑服务商")
+            .navigationTitle(isNew ? "provider.editor.title.new".l : "provider.editor.title.edit".l)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button("common.cancel".l) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { save() }
+                    Button("common.save".l) { save() }
                 }
             }
             .onAppear { loadEditing() }
@@ -584,7 +613,7 @@ struct CustomProviderEditorSheet: View {
     private func modelRow(_ model: Binding<EditableModel>) -> some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.xs) {
             HStack(spacing: DesignTokens.Spacing.s) {
-                TextField("模型 ID（如 deepseek-v4-pro）", text: model.modelId)
+                TextField("provider.editor.model.idPlaceholder".l, text: model.modelId)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.visorBody)
@@ -598,11 +627,11 @@ struct CustomProviderEditorSheet: View {
                 }
                 .buttonStyle(.plain)
             }
-            TextField("显示名称", text: model.displayName)
+            TextField("provider.editor.model.displayName".l, text: model.displayName)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .font(.visorBody)
-            Toggle("支持图片输入", isOn: model.supportsVision)
+            Toggle("provider.editor.model.supportsVision".l, isOn: model.supportsVision)
                 .font(.visorCaption)
         }
         .padding(DesignTokens.Spacing.s)
@@ -629,7 +658,7 @@ struct CustomProviderEditorSheet: View {
     private func testConnectivity() {
         let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedURL.isEmpty, let base = URL(string: trimmedURL) else {
-            testResult = .failure("Base URL 无效")
+            testResult = .failure("provider.editor.test.baseURLInvalid".l)
             return
         }
 
@@ -639,7 +668,7 @@ struct CustomProviderEditorSheet: View {
         } else if let existing = editing.flatMap({ CustomProviderRegistry.shared.apiKey(for: $0.id) }) {
             key = existing
         } else {
-            testResult = .failure("请先输入 API Key")
+            testResult = .failure("provider.editor.test.apiKeyMissing".l)
             return
         }
 
@@ -658,7 +687,7 @@ struct CustomProviderEditorSheet: View {
                 guard let http = resp as? HTTPURLResponse else {
                     await MainActor.run {
                         isTesting = false
-                        testResult = .failure("响应格式异常")
+                        testResult = .failure("provider.editor.test.responseInvalid".l)
                     }
                     return
                 }
@@ -673,11 +702,11 @@ struct CustomProviderEditorSheet: View {
                             testResult = .success(modelCount: 0)
                         }
                     } else if http.statusCode == 401 || http.statusCode == 403 {
-                        testResult = .failure("API Key 无效（\(http.statusCode)）")
+                        testResult = .failure("provider.editor.test.apiKeyInvalid".l(http.statusCode))
                     } else {
                         let body = String(data: data, encoding: .utf8) ?? ""
                         let preview = String(body.prefix(80))
-                        testResult = .failure("HTTP \(http.statusCode): \(preview)")
+                        testResult = .failure("provider.editor.test.httpError".l(http.statusCode, preview))
                     }
                 }
             } catch {
@@ -693,11 +722,11 @@ struct CustomProviderEditorSheet: View {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
-            errorMessage = "请填写服务商名称"
+            errorMessage = "provider.editor.error.nameRequired".l
             return
         }
         guard !trimmedURL.isEmpty, URL(string: trimmedURL) != nil else {
-            errorMessage = "Base URL 无效"
+            errorMessage = "provider.editor.error.urlInvalid".l
             return
         }
         let validModels = models.compactMap { m -> CustomModelInfo? in
@@ -706,13 +735,13 @@ struct CustomProviderEditorSheet: View {
             guard !mid.isEmpty, !dname.isEmpty else { return nil }
             // 防止将 Base URL 误填为模型 ID
             if mid.lowercased().hasPrefix("http://") || mid.lowercased().hasPrefix("https://") {
-                errorMessage = "模型 ID「\(mid)」看起来像 URL，请填写模型名称（如 deepseek-v4-pro）"
+                errorMessage = "provider.editor.error.modelIdLikeURL".l(mid)
                 return nil
             }
             return CustomModelInfo(id: mid, displayName: dname, supportsVision: m.supportsVision)
         }
         guard !validModels.isEmpty, errorMessage == nil else {
-            if errorMessage == nil { errorMessage = "至少添加一个有效的模型（需填写 ID 和显示名称）" }
+            if errorMessage == nil { errorMessage = "provider.editor.error.noValidModels".l }
             return
         }
 

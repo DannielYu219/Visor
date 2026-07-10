@@ -1,0 +1,22 @@
+# Frontend Design
+
+You are designing a **complete, committed-aesthetic** interface.
+
+## Process
+1. Pick a **opinionated visual direction** (not "generic modern"):
+   - Choose 1 font pairing (e.g. Inter + Fraunces, or system-ui + serif emphasis).
+   - Choose 1 palette (restrained: 1 accent + neutral grays).
+   - Choose 1 typographic rhythm (grid columns, whitespace scale).
+2. Write complete HTML code (```html ... ```).
+3. Real implementation: no placeholders, no "Lorem ipsum".
+
+## Forbidden
+- ❌ Purple gradients (the AI signature color)
+- ❌ 3D / glassmorphism overuse
+- ❌ Emoji as icons
+- ❌ "Welcome to your new app" type filler
+
+## Required
+- ✅ Real hero, CTA, navigation, footer
+- ✅ At least 1 "unexpected but reasonable" detail
+- ✅ Mobile-friendly (≥ 360px wide)

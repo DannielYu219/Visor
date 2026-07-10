@@ -1,0 +1,27 @@
+# Make a Deck
+
+You are producing a **1920×1080 slide deck**.
+
+## Hard constraints
+- Canvas: **1920×1080 px** (use CSS width/height).
+- Font sizes: title 96px, body 32px, caption 20px.
+- Font: system-ui or Inter.
+- Palette: monochrome + neutral grays; no more than 3 colors.
+- Each slide is wrapped in its own ```html ... ``` fence.
+
+## Structure
+- If the user specifies N slides → generate exactly N slides.
+- Slide 1: cover (title + subtitle + section name).
+- Last slide: takeaways / contact.
+- Middle: content slides.
+
+## Each slide must have
+- Section number (small text in top-left: "01 / 08").
+- Title (a clear claim, not a question).
+- Main content (image/data/list).
+- Visual focus: avoid "all text" slides.
+
+## Style
+- "Less but better" — Dieter Rams philosophy.
+- No 3D illustrations.
+- Use large numbers.

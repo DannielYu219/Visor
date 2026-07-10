@@ -170,7 +170,7 @@ enum FileSystemError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .pathTraversal(let p):
-            return "路径越权：\(p)"
+            return "fs.error.pathTraversal".l(p)
         }
     }
 }

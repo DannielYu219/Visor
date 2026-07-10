@@ -11,13 +11,13 @@ struct CostMeter: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-            Text("费用概览")
+            Text("cost.title".l)
                 .font(.visorTitle)
                 .foregroundStyle(.primary)
 
-            meterRow(label: "本次会话", spent: sessionUSD, limit: sessionLimitUSD)
-            meterRow(label: "今日", spent: dailyUSD, limit: dailyLimitUSD)
-            meterRow(label: "本月", spent: monthlyUSD, limit: monthlyLimitUSD)
+            meterRow(label: "cost.session".l, spent: sessionUSD, limit: sessionLimitUSD)
+            meterRow(label: "cost.daily".l, spent: dailyUSD, limit: dailyLimitUSD)
+            meterRow(label: "cost.monthly".l, spent: monthlyUSD, limit: monthlyLimitUSD)
         }
         .padding(DesignTokens.Spacing.l)
         .glassBackground(corner: DesignTokens.Radius.m)

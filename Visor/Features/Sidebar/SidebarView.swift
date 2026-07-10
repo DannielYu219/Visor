@@ -21,7 +21,7 @@ struct SidebarView: View {
     private var header: some View {
         HStack {
             if !isCollapsed {
-                Text("会话")
+                Text("sidebar.title".l)
                     .font(.visorTitle)
                     .padding(.leading, DesignTokens.Spacing.l)
             }
@@ -32,7 +32,7 @@ struct SidebarView: View {
                 size: DesignTokens.Touch.standard,
                 action: { Task { await createNew() } }
             )
-            .accessibilityLabel("新建会话")
+            .accessibilityLabel("sidebar.new".l)
             .padding(.trailing, DesignTokens.Spacing.l)
         }
         .padding(.vertical, DesignTokens.Spacing.m)
@@ -92,7 +92,7 @@ struct SidebarView: View {
             Button(role: .destructive) {
                 deleteSession(session)
             } label: {
-                Label("删除会话", systemImage: "trash")
+                Label("sidebar.delete".l, systemImage: "trash")
             }
         }
     }
@@ -122,7 +122,7 @@ struct SidebarView: View {
 
     @MainActor
     private func createNew() async {
-        let new = SessionEntity(title: "新会话")
+        let new = SessionEntity(title: "sidebar.newSession.defaultTitle".l)
         context.insert(new)
         try? context.save()
         selectedSessionId = new.id

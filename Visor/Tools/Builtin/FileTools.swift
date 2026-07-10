@@ -19,21 +19,17 @@ nonisolated struct FileTools {
     static var fileWrite: ToolDefinition {
         ToolDefinition.function(
             name: "file_write",
-            description: """
-            写入或覆盖一个文件到当前 session 的工作目录。路径相对于 session 根，例如 "index.html"、"assets/style.css"。
-            用于把设计稿（HTML/CSS/JS）落到文件系统，画布会实时刷新预览。
-            仅在新建文件或用户强烈要求重构整个文件时使用；修改已有文件请优先用 file_patch 节约 token。
-            """,
+            description: "tool.desc.fileWrite".l,
             parameters: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "path": .object([
                         "type": .string("string"),
-                        "description": .string("相对路径，例如 index.html")
+                        "description": .string("tool.desc.fileWrite.path".l)
                     ]),
                     "content": .object([
                         "type": .string("string"),
-                        "description": .string("UTF-8 文本内容")
+                        "description": .string("tool.desc.fileWrite.content".l)
                     ])
                 ]),
                 "required": .array([.string("path"), .string("content")])
@@ -44,26 +40,21 @@ nonisolated struct FileTools {
     static var filePatch: ToolDefinition {
         ToolDefinition.function(
             name: "file_patch",
-            description: """
-            局部替换修改已有文件的部分内容（SEARCH/REPLACE）。优先使用此工具修改已存在的文件，可极大节约 token 并提升速度。
-            传入要查找的原文 search 与替换后的内容 replace，工具会在文件中精确定位 search 并替换为 replace。
-            要求 search 在文件中唯一匹配（0 匹配或多次匹配都会失败，请补充更多上下文行使其唯一）。
-            replace 为空字符串表示删除 search 块。
-            """,
+            description: "tool.desc.filePatch".l,
             parameters: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "path": .object([
                         "type": .string("string"),
-                        "description": .string("相对路径，例如 index.html")
+                        "description": .string("tool.desc.filePatch.path".l)
                     ]),
                     "search": .object([
                         "type": .string("string"),
-                        "description": .string("要查找并替换的原文，必须是文件中的精确片段（含缩进/换行），且在文件中唯一")
+                        "description": .string("tool.desc.filePatch.search".l)
                     ]),
                     "replace": .object([
                         "type": .string("string"),
-                        "description": .string("替换后的内容；传空串表示删除 search 块")
+                        "description": .string("tool.desc.filePatch.replace".l)
                     ])
                 ]),
                 "required": .array([.string("path"), .string("search"), .string("replace")])
@@ -74,13 +65,13 @@ nonisolated struct FileTools {
     static var fileRead: ToolDefinition {
         ToolDefinition.function(
             name: "file_read",
-            description: "读取 session 工作目录中的一个文件，返回 UTF-8 文本内容。",
+            description: "tool.desc.fileRead".l,
             parameters: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "path": .object([
                         "type": .string("string"),
-                        "description": .string("相对路径")
+                        "description": .string("tool.desc.fileRead.path".l)
                     ])
                 ]),
                 "required": .array([.string("path")])
@@ -91,7 +82,7 @@ nonisolated struct FileTools {
     static var fileList: ToolDefinition {
         ToolDefinition.function(
             name: "file_list",
-            description: "列出 session 工作目录中的所有文件（含子目录），返回 JSON 数组。",
+            description: "tool.desc.fileList".l,
             parameters: .object([
                 "type": .string("object"),
                 "properties": .object([:]),
@@ -103,13 +94,13 @@ nonisolated struct FileTools {
     static var fileRemove: ToolDefinition {
         ToolDefinition.function(
             name: "file_remove",
-            description: "删除一个文件。",
+            description: "tool.desc.fileRemove".l,
             parameters: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "path": .object([
                         "type": .string("string"),
-                        "description": .string("相对路径")
+                        "description": .string("tool.desc.fileRemove.path".l)
                     ])
                 ]),
                 "required": .array([.string("path")])
@@ -120,13 +111,13 @@ nonisolated struct FileTools {
     static var fileMkdir: ToolDefinition {
         ToolDefinition.function(
             name: "file_mkdir",
-            description: "创建子目录（支持嵌套路径）。",
+            description: "tool.desc.fileMkdir".l,
             parameters: .object([
                 "type": .string("object"),
                 "properties": .object([
                     "path": .object([
                         "type": .string("string"),
-                        "description": .string("相对路径")
+                        "description": .string("tool.desc.fileMkdir.path".l)
                     ])
                 ]),
                 "required": .array([.string("path")])
@@ -190,7 +181,7 @@ nonisolated struct FileTools {
                 try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
                 return successJSON(["ok": true, "path": path])
             default:
-                return errorJSON("unknown_tool", "工具不存在：\(name)")
+                return errorJSON("unknown_tool", "tool.error.unknown".l(name))
             }
         } catch {
             return errorJSON("exec_error", "\(error)")
@@ -265,32 +256,32 @@ nonisolated struct FileTools {
         replace: String
     ) -> String {
         guard !path.isEmpty else {
-            return errorJSON("invalid_args", "path 不能为空")
+            return errorJSON("invalid_args", "tool.error.pathEmpty".l)
         }
         guard !search.isEmpty else {
-            return errorJSON("invalid_args", "search 不能为空（如需清空整个文件请用 file_write）")
+            return errorJSON("invalid_args", "tool.error.searchEmpty".l)
         }
         guard fs.exists(path) else {
-            return errorJSON("not_found", "文件不存在：\(path)（请先用 file_write 创建）")
+            return errorJSON("not_found", "tool.error.fileNotFound".l(path))
         }
 
         let original: String
         do {
             original = try fs.read(path)
         } catch {
-            return errorJSON("read_error", "读取失败：\(error)")
+            return errorJSON("read_error", "tool.error.readFailed".l("\(error)"))
         }
 
         let matchCount = Self.occurrences(of: search, in: original)
         if matchCount == 0 {
-            return errorJSON("not_found", "search 块在文件中未找到匹配。请确认缩进/换行是否完全一致，或先用 file_read 查看当前内容。")
+            return errorJSON("not_found", "tool.error.searchNotFound".l)
         }
         if matchCount > 1 {
-            return errorJSON("ambiguous", "search 块在文件中匹配了 \(matchCount) 次。请在 search 中补充更多上下文行使其唯一。")
+            return errorJSON("ambiguous", "tool.error.searchAmbiguous".l(matchCount))
         }
 
         guard let range = original.range(of: search) else {
-            return errorJSON("internal", "替换失败")
+            return errorJSON("internal", "tool.error.internalReplace".l)
         }
         let updated = original.replacingCharacters(in: range, with: replace)
 
@@ -303,7 +294,7 @@ nonisolated struct FileTools {
                 "replaced": 1
             ])
         } catch {
-            return errorJSON("write_error", "写入失败：\(error)")
+            return errorJSON("write_error", "tool.error.writeFailed".l("\(error)"))
         }
     }
 

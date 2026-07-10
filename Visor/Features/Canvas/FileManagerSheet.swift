@@ -30,11 +30,11 @@ struct FileManagerSheet: View {
                 bottomBar
             }
             .background(Color.visorBackground)
-            .navigationTitle("文件管理")
+            .navigationTitle("fileManager.title".l)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("完成") { dismiss() }
+                    Button("common.done".l) { dismiss() }
                 }
             }
             .overlay(alignment: .top) {
@@ -71,10 +71,10 @@ struct FileManagerSheet: View {
                 case .success(let urls):
                     if let url = urls.first {
                         onPickFile(url)
-                        toast = "已导入：\(url.lastPathComponent)"
+                        toast = "fileManager.imported".l(url.lastPathComponent)
                     }
                 case .failure(let err):
-                    toast = "文件选取失败：\(err.localizedDescription)"
+                    toast = "fileManager.error.pick".l(err.localizedDescription)
                 }
             }
         }
@@ -97,7 +97,7 @@ struct FileManagerSheet: View {
                                     Button(role: .destructive) {
                                         deleteFile(entry)
                                     } label: {
-                                        Label("删除", systemImage: "trash")
+                                        Label("common.delete".l, systemImage: "trash")
                                     }
                                 }
                         }
@@ -141,12 +141,12 @@ struct FileManagerSheet: View {
                     Button {
                         exportFile(entry)
                     } label: {
-                        Label("导出", systemImage: "square.and.arrow.up")
+                        Label("common.export".l, systemImage: "square.and.arrow.up")
                     }
                     Button(role: .destructive) {
                         deleteFile(entry)
                     } label: {
-                        Label("删除", systemImage: "trash")
+                        Label("common.delete".l, systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -168,10 +168,10 @@ struct FileManagerSheet: View {
             Image(systemName: "folder")
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
-            Text("暂无文件")
+            Text("fileManager.empty.title".l)
                 .font(.visorTitle)
                 .foregroundStyle(.secondary)
-            Text("点击下方「+ 从文件」上传文件")
+            Text("fileManager.empty.hint".l)
                 .font(.visorBody)
                 .foregroundStyle(.secondary)
         }
@@ -185,7 +185,7 @@ struct FileManagerSheet: View {
             Button {
                 showFilePicker = true
             } label: {
-                Label("从文件", systemImage: "doc.badge.plus")
+                Label("fileManager.import".l, systemImage: "doc.badge.plus")
                     .font(.visorBody)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 48)
@@ -215,7 +215,7 @@ struct FileManagerSheet: View {
                 previewContent = try fs.read(entry.path)
                 showPreview()
             } catch {
-                toast = "读取失败：\(error.localizedDescription)"
+                toast = "fileManager.error.read".l(error.localizedDescription)
             }
         }
     }
@@ -227,7 +227,7 @@ struct FileManagerSheet: View {
         DispatchQueue.main.async {
             // 简单实现：用 alert 显示前 500 字符
             // 完整预览可以用单独的 sheet，但为精简 UI 暂用 toast 提示
-            self.toast = "预览 \(pathDisplay)：\n\(String(content.prefix(200)))…"
+            self.toast = "fileManager.preview".l(pathDisplay, String(content.prefix(200)))
         }
     }
 
@@ -240,7 +240,7 @@ struct FileManagerSheet: View {
                     sessionId: sessionId, path: entry.path, kind: .remove
                 )
                 await MainActor.run {
-                    toast = "已删除：\(entry.path)"
+                    toast = "fileManager.deleted".l(entry.path)
                     if entry.path == activePath {
                         activePath = ""
                     }
@@ -248,7 +248,7 @@ struct FileManagerSheet: View {
                 await reload()
             } catch {
                 await MainActor.run {
-                    toast = "删除失败：\(error.localizedDescription)"
+                    toast = "fileManager.error.delete".l(error.localizedDescription)
                 }
             }
         }
@@ -260,7 +260,7 @@ struct FileManagerSheet: View {
             let absURL = try fs.absoluteURL(for: entry.path)
             presentShareSheet(url: absURL)
         } catch {
-            toast = "导出失败：\(error.localizedDescription)"
+            toast = "fileManager.error.export".l(error.localizedDescription)
         }
     }
 

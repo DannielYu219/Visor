@@ -33,12 +33,12 @@ struct ComposerBar: View {
                     Button {
                         showPhotoPicker = true
                     } label: {
-                        Label("照片", systemImage: "photo")
+                        Label("composer.attach.photo".l, systemImage: "photo")
                     }
                     Button {
                         showFilePicker = true
                     } label: {
-                        Label("文件", systemImage: "doc")
+                        Label("composer.attach.file".l, systemImage: "doc")
                     }
                 } label: {
                     Image(systemName: "plus")
@@ -52,12 +52,12 @@ struct ComposerBar: View {
                 .buttonStyle(.plain)
                 .disabled(viewModel.draftAttachments.count >= ChatViewModel.maxAttachments)
                 .opacity(viewModel.draftAttachments.count >= ChatViewModel.maxAttachments ? 0.4 : 1.0)
-                .accessibilityLabel("添加附件")
+                .accessibilityLabel("composer.attach".l)
                 .padding(.leading, 6)
                 .padding(.vertical, 6)
 
                 TextField(
-                    "输入消息…",
+                    "composer.placeholder".l,
                     text: $viewModel.draft,
                     axis: .vertical
                 )
@@ -83,7 +83,7 @@ struct ComposerBar: View {
                 .buttonStyle(.plain)
                 .disabled(!viewModel.isStreaming && viewModel.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && viewModel.draftAttachments.isEmpty)
                 .opacity(canSend ? 1.0 : 0.4)
-                .accessibilityLabel(viewModel.isStreaming ? "停止生成" : "发送消息")
+                .accessibilityLabel(viewModel.isStreaming ? "composer.stop".l : "composer.send".l)
                 .padding(.trailing, 6)
                 .padding(.vertical, 6)
             }
@@ -112,7 +112,7 @@ struct ComposerBar: View {
                     onPickFile(url)
                 }
             case .failure(let err):
-                toast = "文件选取失败：\(err.localizedDescription)"
+                toast = "composer.error.pickFile".l(err.localizedDescription)
             }
         }
         .onChange(of: selectedItem) { _, new in
@@ -136,7 +136,7 @@ struct ComposerBar: View {
             }
         }
         if isProcessingImage {
-            ProgressView("处理图片…")
+            ProgressView("composer.processingImage".l)
                 .font(.visorCaption)
                 .padding(.bottom, DesignTokens.Spacing.xs)
         }
@@ -208,7 +208,7 @@ struct ComposerBar: View {
         if !viewModel.draftAttachments.isEmpty,
            let model = OpenRouterModels.find(viewModel.selectedModelId),
            !model.supportsVision {
-            toast = "当前模型不支持图片输入，请切换到 GPT-4o / Gemini Flash / Claude Haiku"
+            toast = "composer.error.visionUnsupported".l
         }
         viewModel.send()
     }
@@ -220,22 +220,22 @@ struct ComposerBar: View {
             defer { Task { @MainActor in isProcessingImage = false } }
 
             guard let data = try? await item.loadTransferable(type: Data.self) else {
-                await MainActor.run { toast = "图片加载失败" }
+                await MainActor.run { toast = "composer.error.imageLoad".l }
                 return
             }
             guard let uiImage = UIImage(data: data) else {
-                await MainActor.run { toast = "图片格式无效" }
+                await MainActor.run { toast = "composer.error.imageFormat".l }
                 return
             }
 
             // 压缩到 max 1024×1024
             let resized = Self.resizeImage(uiImage, maxDimension: 1024)
             guard let jpegData = resized.jpegData(compressionQuality: 0.7) else {
-                await MainActor.run { toast = "图片编码失败" }
+                await MainActor.run { toast = "composer.error.imageEncode".l }
                 return
             }
             guard jpegData.count < maxImageBytes else {
-                await MainActor.run { toast = "图片过大（>4MB），请选择更小的图片" }
+                await MainActor.run { toast = "composer.error.imageTooLarge".l }
                 return
             }
 
@@ -243,7 +243,7 @@ struct ComposerBar: View {
 
             await MainActor.run {
                 if !viewModel.addAttachment(dataURL) {
-                    toast = "最多 \(ChatViewModel.maxAttachments) 张图片"
+                    toast = "composer.error.tooManyImages".l(ChatViewModel.maxAttachments)
                 }
             }
         }

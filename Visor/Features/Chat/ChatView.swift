@@ -45,9 +45,9 @@ struct DesignSessionView: View {
                 HStack(spacing: 6) {
                     Text(String(format: "$%.4f", viewModel.sessionCostUSD))
                     Text("·")
-                    Text("in \(viewModel.sessionInputTokens)")
+                    Text("chat.token.in".l(viewModel.sessionInputTokens))
                     Text("·")
-                    Text("out \(viewModel.sessionOutputTokens)")
+                    Text("chat.token.out".l(viewModel.sessionOutputTokens))
                 }
                 .font(.visorCaption)
                 .foregroundStyle(.secondary)
@@ -111,7 +111,7 @@ struct DesignSessionView: View {
                 .foregroundStyle(.primary)
                 .circularGlass(size: DesignTokens.Touch.standard)
         }
-        .accessibilityLabel("选择模型")
+        .accessibilityLabel("chat.modelPicker".l)
     }
 
     // MARK: - Chat Panel
@@ -146,7 +146,7 @@ struct DesignSessionView: View {
             Image(systemName: "paintbrush.pointed")
                 .font(.system(size: 32))
                 .foregroundStyle(.secondary)
-            Text("试试输入「做一个 pitch deck」或「设计一个登录页」")
+            Text("chat.empty.hint".l)
                 .font(.visorCaption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -180,7 +180,7 @@ struct DesignSessionView: View {
         HStack(spacing: 6) {
             Image(systemName: "sparkles")
                 .foregroundStyle(.purple)
-            Text("已路由到 \(viewModel.activeSkillName ?? "")")
+            Text("chat.skillRouted".l(viewModel.activeSkillName ?? ""))
                 .font(.visorCaption)
             Spacer()
         }

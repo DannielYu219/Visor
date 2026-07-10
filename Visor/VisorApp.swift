@@ -13,11 +13,13 @@ import UIKit
 struct VisorApp: App {
     @State private var environment = AppEnvironment()
     @State private var bgTaskID: UIBackgroundTaskIdentifier = .invalid
+    @ObservedObject private var languageManager = LanguageManager.shared
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(environment)
+                .environment(\.locale, languageManager.currentLocale)
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
                     // 申请后台执行时间（最多 30 秒）
                     bgTaskID = UIApplication.shared.beginBackgroundTask(withName: "VisorStreaming") {

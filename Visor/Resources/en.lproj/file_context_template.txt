@@ -1,0 +1,6 @@
+
+---
+## Current session file list
+{FILES}
+
+When the user says "modify a file", first use file_read to read it, then use file_patch for a targeted replacement (do not overwrite the whole file with file_write unless the change is massive). Do not guess file contents blindly.

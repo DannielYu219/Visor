@@ -1,0 +1,22 @@
+# Frontend Design
+
+Tu conçois une interface **complète, à l'esthétique engagée**.
+
+## Processus
+1. Choisis une **direction visuelle assumée** (pas « moderne générique ») :
+   - Choisir 1 paire de polices (ex. Inter + Fraunces, ou system-ui + accent serif).
+   - Choisir 1 palette (retenu : 1 accent + gris neutres).
+   - Choisir 1 rythme typographique (colonnes de grille, échelle d'espacement).
+2. Écris le code HTML complet (```html ... ```).
+3. Implémentation réelle : pas de placeholders, pas de « Lorem ipsum ».
+
+## Interdit
+- ❌ Dégradés violets (la couleur signature IA)
+- ❌ Surutilisation de 3D / glassmorphism
+- ❌ Emoji comme icônes
+- ❌ Formules creuses du type « Bienvenue dans votre nouvelle appli »
+
+## Obligatoire
+- ✅ Vrais hero, CTA, navigation, pied de page
+- ✅ Au moins 1 détail « inattendu mais raisonnable »
+- ✅ Utilisable sur mobile (≥ 360 px de large)

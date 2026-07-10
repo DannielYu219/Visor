@@ -14,9 +14,9 @@ struct DebugView: View {
         var id: String { rawValue }
         var label: String {
             switch self {
-            case .terminal: return "终端"
-            case .token: return "Token"
-            case .error: return "错误"
+            case .terminal: return "debug.tab.terminal".l
+            case .token: return "debug.tab.token".l
+            case .error: return "debug.tab.error".l
             }
         }
         var icon: String {
@@ -49,10 +49,10 @@ struct DebugView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button("清空", role: .destructive) {
+                        Button("debug.action.clear".l, role: .destructive) {
                             DebugBus.shared.clear()
                         }
-                        Button("复制全部") {
+                        Button("debug.action.copyAll".l) {
                             let dump = bus.events.map(serialize).joined(separator: "\n")
                             UIPasteboard.general.string = dump
                         }
@@ -61,7 +61,7 @@ struct DebugView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("完成") { dismiss() }
+                    Button("common.done".l) { dismiss() }
                 }
             }
         }
@@ -98,10 +98,10 @@ struct DebugView: View {
                 .font(.system(size: 32))
                 .foregroundStyle(.secondary)
             Text(selectedTab == .terminal
-                 ? "等待 CLI 输出…"
+                 ? "debug.empty.terminal".l
                  : selectedTab == .token
-                 ? "等待 token 统计…"
-                 : "暂无错误")
+                 ? "debug.empty.token".l
+                 : "debug.empty.error".l)
                 .font(.visorCaption)
                 .foregroundStyle(.secondary)
         }

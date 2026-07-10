@@ -1,0 +1,6 @@
+
+---
+## Liste des fichiers de la session actuelle
+{FILES}
+
+Quand l'utilisateur dit « modifier un fichier », lis-le d'abord avec file_read, puis utilise file_patch pour un remplacement ciblé (ne pas écraser tout le fichier avec file_write, sauf si la modification est massive). Ne devine pas aveuglément le contenu du fichier.

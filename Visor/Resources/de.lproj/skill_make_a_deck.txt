@@ -1,0 +1,27 @@
+# Make a Deck
+
+Du erstellst ein **1920×1080 Slide-Deck**.
+
+## Harte Bedingungen
+- Canvas: **1920×1080 px** (CSS width/height verwenden).
+- Schriftgrößen: Titel 96px, Fließtext 32px, Beschriftung 20px.
+- Schrift: system-ui oder Inter.
+- Palette: einfarbig + neutrale Grautöne; nicht mehr als 3 Farben.
+- Jede Slide wird in einen eigenen ```html ... ```-Block eingebettet.
+
+## Struktur
+- Wenn der Nutzer N Slides angibt → erzeuge genau N Slides.
+- Slide 1: Cover (Titel + Untertitel + Abschnittsname).
+- Letzte Slide: Takeaways / Kontakt.
+- Mitte: Inhalts-Slides.
+
+## Jede Slide muss haben
+- Abschnittsnummer (kleiner Text oben links: „01 / 08").
+- Titel (eine klare Aussage, keine Frage).
+- Hauptinhalt (Bild/Daten/Liste).
+- Visueller Schwerpunkt: „reiner Text"-Slides vermeiden.
+
+## Stil
+- „Less but better" — Dieter Rams' Philosophie.
+- Keine 3D-Illustrationen.
+- Große Zahlen verwenden.

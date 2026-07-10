@@ -1,0 +1,233 @@
+/* Visor — 日本語（漢字寄り・明治大正風の訳語を優先） */
+
+/* ===== 通用 ===== */
+"common.done" = "完了";
+"common.cancel" = "取消";
+"common.save" = "保存";
+"common.delete" = "削除";
+"common.edit" = "編集";
+"common.add" = "追加";
+"common.export" = "書出";
+"common.ok" = "承知";
+"common.retry" = "再試行";
+"common.later" = "後程";
+
+/* ===== 言語 ===== */
+"lang.system" = "系統に従う";
+"settings.language.title" = "応用言語";
+"settings.language.subtitle" = "切替直後に反映、再起動不要";
+"settings.language.restart.hint" = "画面が更新されない場合は再起動して下さい";
+
+/* ===== 設定 ===== */
+"settings.title" = "設定";
+"settings.apikey.title" = "OpenRouter API 鍵";
+"settings.apikey.placeholder" = "API 鍵";
+"settings.apikey.show" = "API 鍵を表示";
+"settings.apikey.hide" = "API 鍵を隠蔽";
+"settings.apikey.save" = "鍵束に保存";
+"settings.apikey.clear" = "保存済の鍵を削除";
+"settings.apikey.saved" = "保存済";
+"settings.apikey.empty" = "API 鍵は空にできません";
+
+"settings.customProvider.title" = "独自提供者";
+"settings.customProvider.empty" = "OpenAI 互換の独自提供者を追加（OpenAI、Together、Groq 等）";
+"settings.customProvider.modelCount" = "%d 個の模型";
+
+"settings.budget.title" = "予算（USD）";
+"settings.budget.session" = "対話";
+"settings.budget.daily" = "日次";
+"settings.budget.monthly" = "月次";
+"settings.budget.apply" = "予算を適用";
+
+"settings.pricing.title" = "模型単価（即時）";
+"settings.pricing.row" = "入力 $%.2f / 出力 $%.2f";
+
+/* ===== 独自提供者編集器 ===== */
+"provider.editor.section.info" = "提供者情報";
+"provider.editor.name" = "名称";
+"provider.editor.name.placeholder" = "例：私の OpenAI";
+"provider.editor.baseURL" = "Base URL";
+"provider.editor.baseURL.hint" = "OpenAI 互換形式、/v1 経路の包含が必要";
+"provider.editor.apiKey.title" = "API 鍵";
+"provider.editor.apiKey.existing" = "API 鍵設定済（空欄で現状維持）";
+"provider.editor.apiKey.placeholder" = "API 鍵";
+"provider.editor.test" = "接続試験";
+"provider.editor.testing" = "試験中…";
+"provider.editor.test.success" = "✓ 接続成功、%d 個の模型";
+"provider.editor.test.failure" = "✗ %@";
+"provider.editor.test.baseURLInvalid" = "Base URL が無効";
+"provider.editor.test.apiKeyMissing" = "先ず API 鍵を入力して下さい";
+"provider.editor.test.responseInvalid" = "応答形式が異常";
+"provider.editor.test.apiKeyInvalid" = "API 鍵が無効（%d）";
+"provider.editor.test.httpError" = "HTTP %d: %@";
+"provider.editor.deepseek.title" = "DeepSeek 思考方式";
+"provider.editor.deepseek.intensity" = "思考強度";
+"provider.editor.deepseek.hint" = "高 — 通常課題向き、最大 — 複雑なエージェント課題向き";
+"provider.editor.models.title" = "模型一覧";
+"provider.editor.models.add" = "模型を追加";
+"provider.editor.models.empty" = "少なくとも一つの模型を追加して下さい";
+"provider.editor.model.idPlaceholder" = "模型識別子（例：deepseek-v4-pro）";
+"provider.editor.model.displayName" = "表示名";
+"provider.editor.model.supportsVision" = "画像入力対応";
+"provider.editor.title.new" = "独自提供者を追加";
+"provider.editor.title.edit" = "提供者を編集";
+"provider.editor.error.nameRequired" = "提供者名を入力して下さい";
+"provider.editor.error.urlInvalid" = "Base URL が無効";
+"provider.editor.error.modelIdLikeURL" = "模型識別子「%@」は URL と類似しています。模型名（例：deepseek-v4-pro）を入力して下さい";
+"provider.editor.error.noValidModels" = "有効な模型を少なくとも一つ追加して下さい（識別子と表示名が必要）";
+
+/* DeepSeek 思考強度 */
+"deepseek.mode.disabled" = "無効";
+"deepseek.mode.high" = "高";
+"deepseek.mode.max" = "最大";
+
+/* ===== 対話 ===== */
+"chat.empty.hint" = "「pitch deck を作成」「ログイン画面を設計」などと入力してみて下さい";
+"chat.modelPicker" = "模型を選択";
+"chat.skillRouted" = "%@ へ振分け";
+"chat.token.in" = "入力 %d";
+"chat.token.out" = "出力 %d";
+"chat.error.stream" = "応答流異常：%@";
+"chat.error.fsInit" = "ファイル体系初期化失敗：%@";
+"chat.error.modelError" = "模型が finish_reason=error を返却";
+"chat.tool.calling" = "🔧 工具を呼出し中：%@…";
+"chat.tool.called" = "🔧 工具呼出：%@";
+
+/* 入力欄 */
+"composer.placeholder" = "消息を入力…";
+"composer.send" = "送信";
+"composer.stop" = "生成停止";
+"composer.attach" = "添付を追加";
+"composer.attach.photo" = "写真";
+"composer.attach.file" = "ファイル";
+"composer.processingImage" = "画像処理中…";
+"composer.error.pickFile" = "ファイル選択失敗：%@";
+"composer.error.imageLoad" = "画像読込失敗";
+"composer.error.imageFormat" = "画像形式無効";
+"composer.error.imageEncode" = "画像符号化失敗";
+"composer.error.imageTooLarge" = "画像過大（>4MB）、より小さな画像を選択して下さい";
+"composer.error.tooManyImages" = "画像は最大 %d 枚まで";
+"composer.error.visionUnsupported" = "現行模型は画像入力非対応。GPT-4o / Gemini Flash / Claude Haiku に切替して下さい";
+
+/* ===== 側欄 ===== */
+"sidebar.title" = "対話";
+"sidebar.new" = "新規対話";
+"sidebar.delete" = "対話を削除";
+"sidebar.newSession.defaultTitle" = "新規対話";
+
+/* ===== 根画面 / 空状態 ===== */
+"root.empty.apiKey.title" = "先ず OpenRouter API 鍵を設定して下さい";
+"root.empty.apiKey.subtitle" = "設定にて API 鍵を貼付すれば設計を開始できます";
+"root.empty.apiKey.action" = "設定を開く";
+"root.placeholder.noSession" = "対話未選択";
+"root.placeholder.noCanvas" = "カンバスなし";
+
+/* ===== カンバス ===== */
+"canvas.title" = "設計カンバス";
+"canvas.empty.title" = "カンバスは空です";
+"canvas.empty.hint" = "下方の対話欄に設計要請を入力して下さい";
+"canvas.toolbar.fileManager" = "文件管理";
+"canvas.toolbar.refresh" = "カンバスを再読込";
+"canvas.toolbar.toggleSource" = "源碼の表示 / 隠蔽";
+"canvas.toolbar.export" = "HTML を書出";
+"canvas.toolbar.settings" = "カンバス設定";
+"canvas.settings.title" = "カンバス描画設定";
+"canvas.settings.previewSize" = "現在の预覽: %d × %d";
+"canvas.settings.fillHint" = "カンバスを充填、寸法は窓に応じて自适应";
+"canvas.settings.width" = "预覽幅 (px、0 = 充填)";
+"canvas.settings.height" = "预覽高 (px、0 = 充填)";
+"canvas.settings.radius" = "丸角 (pt、最大 %d)";
+"canvas.settings.reset" = "復元 — カンバスを充填";
+"canvas.settings.placeholder" = "充填";
+"canvas.source.empty" = "（内容なし）";
+"canvas.export.empty" = "カンバスは空、书出内容なし";
+"canvas.export.failed" = "書出失敗：%@";
+"canvas.import.success" = "✓ 取込済：%@";
+"canvas.import.failed" = "取込失敗：%@";
+"canvas.error.readFile" = "文件を読取できません（UTF-8 文本ではない可能性）";
+"canvas.error.fileTooLarge" = "文件過大（>1MB）";
+
+/* ===== 文件管理 Sheet ===== */
+"fileManager.title" = "文件管理";
+"fileManager.empty.title" = "文件なし";
+"fileManager.empty.hint" = "下方の「+ 文件から」を押して取込んで下さい";
+"fileManager.import" = "文件から";
+"fileManager.imported" = "取込済：%@";
+"fileManager.error.pick" = "文件選択失敗：%@";
+"fileManager.error.read" = "読取失敗：%@";
+"fileManager.error.delete" = "削除失敗：%@";
+"fileManager.error.export" = "書出失敗：%@";
+"fileManager.deleted" = "削除済：%@";
+"fileManager.preview" = "预覽 %@：\n%@…";
+
+/* ===== 診断 ===== */
+"debug.tab.terminal" = "端末";
+"debug.tab.token" = "Token";
+"debug.tab.error" = "誤謬";
+"debug.empty.terminal" = "CLI 出力を待機中…";
+"debug.empty.token" = "Token 統計を待機中…";
+"debug.empty.error" = "誤謬なし";
+"debug.action.clear" = "清除";
+"debug.action.copyAll" = "全部を複写";
+
+/* ===== 費用計 ===== */
+"cost.title" = "費用概観";
+"cost.session" = "本次対話";
+"cost.daily" = "本日";
+"cost.monthly" = "本月";
+
+/* ===== 消息気泡 ===== */
+"message.reasoning.title" = "思考過程";
+"message.image.decodeFailed" = "画像復号失敗";
+
+/* ===== 対話視图模型 誤謬 ===== */
+"chatvm.error.readFile" = "文件を読取できません（UTF-8 文本ではない可能性）";
+"chatvm.error.fileTooLarge" = "文件過大（>1MB）、より小さな文件を選択して下さい";
+"chatvm.imported" = "✓ 文件取込済：%@ (%d B)";
+"chatvm.error.write" = "文件書込失敗：%@";
+
+/* ===== 技能表示名 ===== */
+"skill.frontendDesign" = "界面設計";
+"skill.openDesign" = "Open Design";
+"skill.makeADeck" = "幻燈片";
+"skill.wireframe" = "線画";
+
+/* ===== 鍵束 誤謬 ===== */
+"keychain.error.unhandled" = "鍵束誤謬（OSStatus %d）";
+"keychain.error.dataConversion" = "鍵束資料変換失敗";
+"keychain.error.notFound" = "鍵束に該当項目なし";
+
+/* ===== 文件体系 誤謬 ===== */
+"fs.error.pathTraversal" = "経路越権：%@";
+
+/* ===== 文件脈絡（AgentRuntime 注入） ===== */
+"fileContext.empty" = "空";
+"fileContext.readFailed" = "読取失敗：%@";
+
+/* ===== 工具結果 ===== */
+"tool.error.unknown" = "工具未存在：%@";
+"tool.error.pathEmpty" = "path は空にできません";
+"tool.error.searchEmpty" = "search は空にできません（文件全体を空にする場合は file_write を使用）";
+"tool.error.fileNotFound" = "文件未存在：%@（先ず file_write で作成して下さい）";
+"tool.error.readFailed" = "読取失敗：%@";
+"tool.error.searchNotFound" = "search 塊が文件中に一致なし。字下げ・改行が完全に一致するか確認するか、先ず file_read で現在の内容を確認して下さい。";
+"tool.error.searchAmbiguous" = "search 塊が文件中で %d 回一致しました。search に更に文脈行を補い唯一にして下さい。";
+"tool.error.internalReplace" = "置換失敗";
+"tool.error.writeFailed" = "書込失敗：%@";
+"tool.error.truncatedArgs" = "引数が流式切捨により修復されました。誤削除・空内容書込を防ぐため実行を跳過しました。完全な引数で再呼出して下さい。内容が大きい場合は file_patch で局所置換して下さい（負荷小さく切捨されにくい）。";
+
+/* ===== 工具記述（LLM に送信） ===== */
+"tool.desc.fileWrite" = "現在 session の作業目録に文件を書込／上書する。経路は session 根に相対、例へば \"index.html\"、\"assets/style.css\"。\n設計原稿（HTML／CSS／JS）を文件体系に落とすに用ゐ、画布は実時に刷新す。\n新規文件作成時又はユーザが明示的に全件再構築を求むる時にのみ用ゐよ；既存文件修正には file_patch を優先して token を節約せよ。";
+"tool.desc.fileWrite.path" = "相対経路、例へば index.html";
+"tool.desc.fileWrite.content" = "UTF-8 文本内容";
+"tool.desc.filePatch" = "既存文件の一部を局所置換す（SEARCH／REPLACE）。既存文件修正には此れを優先す、token を大いに節約し応答を速む。\n検索すべき原文 search と置換後の内容 replace を渡せ、工具は文件中に search を精確に定位し replace に置換す。\nsearch は文件中に唯一の匹配たるべし（0 回又は複数回匹配は失敗す、更に文脈行を補ひて唯一ならしめよ）。\nreplace 空文字は search 塊の削除を意味す。";
+"tool.desc.filePatch.path" = "相対経路、例へば index.html";
+"tool.desc.filePatch.search" = "検索置換すべき原文、文件中の精確断片（字下げ・改行を含む）にして唯一なるべし";
+"tool.desc.filePatch.replace" = "置換後の内容；空文字は search 塊の削除を意味す";
+"tool.desc.fileRead" = "session 作業目録中の文件を読み、UTF-8 文本内容を返す。";
+"tool.desc.fileRead.path" = "相対経路";
+"tool.desc.fileList" = "session 作業目録中の全文件（子目録を含む）を列挙し、JSON 配列を返す。";
+"tool.desc.fileRemove" = "文件を削除す。";
+"tool.desc.fileRemove.path" = "相対経路";
+"tool.desc.fileMkdir" = "子目録を作成す（嵌套経路対応）。";
+"tool.desc.fileMkdir.path" = "相対経路";

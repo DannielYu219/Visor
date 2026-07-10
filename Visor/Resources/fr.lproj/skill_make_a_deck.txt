@@ -1,0 +1,27 @@
+# Make a Deck
+
+Tu produis un **deck de slides 1920×1080**.
+
+## Contraintes strictes
+- Canvas : **1920×1080 px** (utiliser CSS width/height).
+- Tailles de police : titre 96px, corps 32px, légende 20px.
+- Police : system-ui ou Inter.
+- Palette : monochrome + gris neutres ; pas plus de 3 couleurs.
+- Chaque slide est enveloppée dans sa propre clôture ```html ... ```.
+
+## Structure
+- Si l'utilisateur spécifie N slides → génère exactement N slides.
+- Slide 1 : couverture (titre + sous-titre + nom de section).
+- Dernière slide : points clés / contact.
+- Milieu : slides de contenu.
+
+## Chaque slide doit avoir
+- Numéro de section (petit texte en haut à gauche : « 01 / 08 »).
+- Titre (une affirmation claire, pas une question).
+- Contenu principal (image/données/liste).
+- Focalisation visuelle : éviter les slides « tout texte ».
+
+## Style
+- « Less but better » — la philosophie de Dieter Rams.
+- Pas d'illustrations 3D.
+- Utiliser de grands chiffres.

@@ -30,7 +30,7 @@ struct RootView: View {
                                 systemName: "gearshape",
                                 action: { showSettings = true }
                             )
-                            .accessibilityLabel("设置")
+                            .accessibilityLabel("settings.title".l)
                         }
                     }
                 }
@@ -71,7 +71,7 @@ struct RootView: View {
                 if let first = try? modelContext.fetch(FetchDescriptor<SessionEntity>()).first {
                     selectedSessionId = first.id
                 } else {
-                    let new = SessionEntity(title: "新会话")
+                    let new = SessionEntity(title: "sidebar.newSession.defaultTitle".l)
                     modelContext.insert(new)
                     try? modelContext.save()
                     selectedSessionId = new.id
@@ -98,7 +98,7 @@ struct RootView: View {
                 )
                 .id(id)
             } else {
-                placeholder(text: "未选择会话")
+                placeholder(text: "root.placeholder.noSession".l)
             }
         }
     }
@@ -109,7 +109,7 @@ struct RootView: View {
                 CanvasHostView(sessionId: id)
                     .id(id)
             } else {
-                placeholder(text: "暂无画布")
+                placeholder(text: "root.placeholder.noCanvas".l)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -149,19 +149,19 @@ struct RootView: View {
                     Image(systemName: "key.fill")
                         .font(.system(size: 36))
                         .foregroundStyle(.secondary)
-                    Text("请先配置 OpenRouter API Key")
+                    Text("root.empty.apiKey.title".l)
                         .font(.visorTitle)
                         .multilineTextAlignment(.center)
-                    Text("在设置中粘贴您的 API Key 即可开始设计")
+                    Text("root.empty.apiKey.subtitle".l)
                         .font(.visorBody)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                     HStack(spacing: DesignTokens.Spacing.s) {
-                        Button("前往设置") {
+                        Button("root.empty.apiKey.action".l) {
                             showSettings = true
                         }
                         .buttonStyle(.borderedProminent)
-                        Button("稍后") {
+                        Button("common.later".l) {
                             withAnimation(.easeOut(duration: 0.2)) {
                                 skipEmptyState = true
                             }

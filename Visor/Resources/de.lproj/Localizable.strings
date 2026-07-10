@@ -1,0 +1,233 @@
+/* Visor — Deutsch */
+
+/* ===== Allgemein ===== */
+"common.done" = "Fertig";
+"common.cancel" = "Abbrechen";
+"common.save" = "Speichern";
+"common.delete" = "Löschen";
+"common.edit" = "Bearbeiten";
+"common.add" = "Hinzufügen";
+"common.export" = "Exportieren";
+"common.ok" = "OK";
+"common.retry" = "Erneut versuchen";
+"common.later" = "Später";
+
+/* ===== Sprache ===== */
+"lang.system" = "System folgen";
+"settings.language.title" = "App-Sprache";
+"settings.language.subtitle" = "Wird sofort angewendet, kein Neustart nötig";
+"settings.language.restart.hint" = "Wenn die Oberfläche nicht aktualisiert wird, bitte App neu starten";
+
+/* ===== Einstellungen ===== */
+"settings.title" = "Einstellungen";
+"settings.apikey.title" = "OpenRouter API-Key";
+"settings.apikey.placeholder" = "API-Key";
+"settings.apikey.show" = "API-Key anzeigen";
+"settings.apikey.hide" = "API-Key verbergen";
+"settings.apikey.save" = "Im Schlüsselbund speichern";
+"settings.apikey.clear" = "Gespeicherten Key löschen";
+"settings.apikey.saved" = "Gespeichert";
+"settings.apikey.empty" = "API-Key darf nicht leer sein";
+
+"settings.customProvider.title" = "Eigene Anbieter";
+"settings.customProvider.empty" = "OpenAI-kompatible eigene Anbieter hinzufügen (z. B. OpenAI, Together, Groq)";
+"settings.customProvider.modelCount" = "%d Modelle";
+
+"settings.budget.title" = "Budget (USD)";
+"settings.budget.session" = "Sitzung";
+"settings.budget.daily" = "Täglich";
+"settings.budget.monthly" = "Monatlich";
+"settings.budget.apply" = "Budget anwenden";
+
+"settings.pricing.title" = "Modellpreise (Live)";
+"settings.pricing.row" = "Eingabe $%.2f / Ausgabe $%.2f";
+
+/* ===== Anbieter-Editor ===== */
+"provider.editor.section.info" = "Anbieterinfo";
+"provider.editor.name" = "Name";
+"provider.editor.name.placeholder" = "z. B. Mein OpenAI";
+"provider.editor.baseURL" = "Base URL";
+"provider.editor.baseURL.hint" = "OpenAI-kompatibles Format, muss /v1-Pfad enthalten";
+"provider.editor.apiKey.title" = "API-Key";
+"provider.editor.apiKey.existing" = "API-Key konfiguriert (leer lassen, um aktuellen zu behalten)";
+"provider.editor.apiKey.placeholder" = "API-Key";
+"provider.editor.test" = "Verbindung testen";
+"provider.editor.testing" = "Teste…";
+"provider.editor.test.success" = "✓ Verbunden, %d Modelle";
+"provider.editor.test.failure" = "✗ %@";
+"provider.editor.test.baseURLInvalid" = "Base URL ungültig";
+"provider.editor.test.apiKeyMissing" = "Bitte zuerst API-Key eingeben";
+"provider.editor.test.responseInvalid" = "Unerwartetes Antwortformat";
+"provider.editor.test.apiKeyInvalid" = "API-Key ungültig (%d)";
+"provider.editor.test.httpError" = "HTTP %d: %@";
+"provider.editor.deepseek.title" = "DeepSeek-Denkmodus";
+"provider.editor.deepseek.intensity" = "Denkintensität";
+"provider.editor.deepseek.hint" = "Hoch — für normale Aufgaben; Max — für komplexe Agent-Aufgaben";
+"provider.editor.models.title" = "Modellliste";
+"provider.editor.models.add" = "Modell hinzufügen";
+"provider.editor.models.empty" = "Mindestens ein Modell hinzufügen";
+"provider.editor.model.idPlaceholder" = "Modell-ID (z. B. deepseek-v4-pro)";
+"provider.editor.model.displayName" = "Anzeigename";
+"provider.editor.model.supportsVision" = "Unterstützt Bildeingabe";
+"provider.editor.title.new" = "Eigenen Anbieter hinzufügen";
+"provider.editor.title.edit" = "Anbieter bearbeiten";
+"provider.editor.error.nameRequired" = "Bitte Anbieternamen eingeben";
+"provider.editor.error.urlInvalid" = "Base URL ungültig";
+"provider.editor.error.modelIdLikeURL" = "Modell-ID \"%@\" sieht wie eine URL aus. Bitte einen Modellnamen eingeben (z. B. deepseek-v4-pro)";
+"provider.editor.error.noValidModels" = "Mindestens ein gültiges Modell hinzufügen (ID und Anzeigename erforderlich)";
+
+/* DeepSeek-Modi */
+"deepseek.mode.disabled" = "Aus";
+"deepseek.mode.high" = "Hoch";
+"deepseek.mode.max" = "Max";
+
+/* ===== Chat ===== */
+"chat.empty.hint" = "Versuche \"ein Pitch-Deck erstellen\" oder \"eine Anmeldeseite entwerfen\"";
+"chat.modelPicker" = "Modell auswählen";
+"chat.skillRouted" = "Weitergeleitet an %@";
+"chat.token.in" = "Eingabe %d";
+"chat.token.out" = "Ausgabe %d";
+"chat.error.stream" = "Stream-Antwortfehler: %@";
+"chat.error.fsInit" = "Dateisystem-Initialisierung fehlgeschlagen: %@";
+"chat.error.modelError" = "Modell lieferte finish_reason=error";
+"chat.tool.calling" = "🔧 Werkzeug wird aufgerufen: %@…";
+"chat.tool.called" = "🔧 Werkzeugaufruf: %@";
+
+/* Eingabeleiste */
+"composer.placeholder" = "Nachricht eingeben…";
+"composer.send" = "Nachricht senden";
+"composer.stop" = "Generierung stoppen";
+"composer.attach" = "Anhang hinzufügen";
+"composer.attach.photo" = "Foto";
+"composer.attach.file" = "Datei";
+"composer.processingImage" = "Bild wird verarbeitet…";
+"composer.error.pickFile" = "Dateiauswahl fehlgeschlagen: %@";
+"composer.error.imageLoad" = "Bildladefehler";
+"composer.error.imageFormat" = "Bildformat ungültig";
+"composer.error.imageEncode" = "Bildcodierung fehlgeschlagen";
+"composer.error.imageTooLarge" = "Bild zu groß (>4MB), bitte ein kleineres auswählen";
+"composer.error.tooManyImages" = "Maximal %d Bilder";
+"composer.error.visionUnsupported" = "Aktuelles Modell unterstützt keine Bildeingabe. Zu GPT-4o / Gemini Flash / Claude Haiku wechseln";
+
+/* ===== Seitenleiste ===== */
+"sidebar.title" = "Sitzungen";
+"sidebar.new" = "Neue Sitzung";
+"sidebar.delete" = "Sitzung löschen";
+"sidebar.newSession.defaultTitle" = "Neue Sitzung";
+
+/* ===== Root / Leerzustände ===== */
+"root.empty.apiKey.title" = "Bitte zuerst OpenRouter API-Key konfigurieren";
+"root.empty.apiKey.subtitle" = "API-Key in den Einstellungen einfügen, um zu entwerfen";
+"root.empty.apiKey.action" = "Einstellungen öffnen";
+"root.placeholder.noSession" = "Keine Sitzung ausgewählt";
+"root.placeholder.noCanvas" = "Keine Leinwand";
+
+/* ===== Leinwand ===== */
+"canvas.title" = "Design-Leinwand";
+"canvas.empty.title" = "Leinwand ist leer";
+"canvas.empty.hint" = "Entwurfsanfrage unten im Chat eingeben";
+"canvas.toolbar.fileManager" = "Dateiverwaltung";
+"canvas.toolbar.refresh" = "Leinwand aktualisieren";
+"canvas.toolbar.toggleSource" = "Quellcode anzeigen / verbergen";
+"canvas.toolbar.export" = "HTML exportieren";
+"canvas.toolbar.settings" = "Leinwandeinstellungen";
+"canvas.settings.title" = "Leinwand-Render-Einstellungen";
+"canvas.settings.previewSize" = "Vorschau: %d × %d";
+"canvas.settings.fillHint" = "Leinwand wird gefüllt, Größe passt sich dem Fenster an";
+"canvas.settings.width" = "Vorschau-Breite (px, 0 = füllen)";
+"canvas.settings.height" = "Vorschau-Höhe (px, 0 = füllen)";
+"canvas.settings.radius" = "Eckenradius (pt, max %d)";
+"canvas.settings.reset" = "Zurücksetzen — Leinwand füllen";
+"canvas.settings.placeholder" = "Füllen";
+"canvas.source.empty" = "(leer)";
+"canvas.export.empty" = "Leinwand ist leer, nichts zu exportieren";
+"canvas.export.failed" = "Export fehlgeschlagen: %@";
+"canvas.import.success" = "✓ Importiert: %@";
+"canvas.import.failed" = "Import fehlgeschlagen: %@";
+"canvas.error.readFile" = "Datei kann nicht gelesen werden (möglicherweise kein UTF-8-Text)";
+"canvas.error.fileTooLarge" = "Datei zu groß (>1MB)";
+
+/* ===== Dateimanager-Sheet ===== */
+"fileManager.title" = "Dateien";
+"fileManager.empty.title" = "Keine Dateien";
+"fileManager.empty.hint" = "Unten auf \"+ Aus Datei\" tippen zum Hochladen";
+"fileManager.import" = "Aus Datei";
+"fileManager.imported" = "Importiert: %@";
+"fileManager.error.pick" = "Dateiauswahl fehlgeschlagen: %@";
+"fileManager.error.read" = "Lesen fehlgeschlagen: %@";
+"fileManager.error.delete" = "Löschen fehlgeschlagen: %@";
+"fileManager.error.export" = "Export fehlgeschlagen: %@";
+"fileManager.deleted" = "Gelöscht: %@";
+"fileManager.preview" = "Vorschau %@:\n%@…";
+
+/* ===== Debug ===== */
+"debug.tab.terminal" = "Terminal";
+"debug.tab.token" = "Tokens";
+"debug.tab.error" = "Fehler";
+"debug.empty.terminal" = "Warte auf CLI-Ausgabe…";
+"debug.empty.token" = "Warte auf Token-Statistik…";
+"debug.empty.error" = "Keine Fehler";
+"debug.action.clear" = "Leeren";
+"debug.action.copyAll" = "Alle kopieren";
+
+/* ===== Kostenanzeige ===== */
+"cost.title" = "Kostenübersicht";
+"cost.session" = "Diese Sitzung";
+"cost.daily" = "Heute";
+"cost.monthly" = "Dieser Monat";
+
+/* ===== Nachrichtenblase ===== */
+"message.reasoning.title" = "Gedankengang";
+"message.image.decodeFailed" = "Bild-Decodierung fehlgeschlagen";
+
+/* ===== ChatViewModel-Fehler ===== */
+"chatvm.error.readFile" = "Datei kann nicht gelesen werden (möglicherweise kein UTF-8-Text)";
+"chatvm.error.fileTooLarge" = "Datei zu groß (>1MB), bitte eine kleinere auswählen";
+"chatvm.imported" = "✓ Datei importiert: %@ (%d B)";
+"chatvm.error.write" = "Datei schreiben fehlgeschlagen: %@";
+
+/* ===== Skill-Anzeigenamen ===== */
+"skill.frontendDesign" = "Frontend-Design";
+"skill.openDesign" = "Open Design";
+"skill.makeADeck" = "Slide-Deck";
+"skill.wireframe" = "Wireframe";
+
+/* ===== Schlüsselbund-Fehler ===== */
+"keychain.error.unhandled" = "Schlüsselbund-Fehler (OSStatus %d)";
+"keychain.error.dataConversion" = "Schlüsselbund-Datenumwandlung fehlgeschlagen";
+"keychain.error.notFound" = "Schlüsselbund-Eintrag nicht gefunden";
+
+/* ===== Dateisystem-Fehler ===== */
+"fs.error.pathTraversal" = "Pfad-Traversal: %@";
+
+/* ===== Dateikontext (von AgentRuntime injiziert) ===== */
+"fileContext.empty" = "leer";
+"fileContext.readFailed" = "Lesen fehlgeschlagen: %@";
+
+/* ===== Werkzeugergebnisse ===== */
+"tool.error.unknown" = "Werkzeug nicht gefunden: %@";
+"tool.error.pathEmpty" = "path darf nicht leer sein";
+"tool.error.searchEmpty" = "search darf nicht leer sein (zum Leeren der ganzen Datei file_write verwenden)";
+"tool.error.fileNotFound" = "Datei nicht gefunden: %@ (zuerst mit file_write erstellen)";
+"tool.error.readFailed" = "Lesen fehlgeschlagen: %@";
+"tool.error.searchNotFound" = "search-Block in Datei nicht gefunden. Einrückung/Zeilenwechsel genau prüfen oder mit file_read aktuellen Inhalt ansehen.";
+"tool.error.searchAmbiguous" = "search-Block traf %d-mal zu. Mehr Kontextzeilen hinzufügen, um ihn eindeutig zu machen.";
+"tool.error.internalReplace" = "Ersetzen fehlgeschlagen";
+"tool.error.writeFailed" = "Schreiben fehlgeschlagen: %@";
+"tool.error.truncatedArgs" = "Argumente wurden wegen Stream-Abschnitts repariert. Ausführung übersprungen, um Datenverlust zu verhindern. Bitte mit vollständigen Argumenten erneut aufrufen; bei großem Inhalt file_patch verwenden (kleinere Nutzlast, geringere Abschnittsgefahr).";
+
+/* ===== Werkzeugbeschreibungen (an LLM gesendet) ===== */
+"tool.desc.fileWrite" = "Schreibe oder überschreibe eine Datei im Arbeitsverzeichnis der aktuellen Session. Der Pfad ist relativ zur Session-Wurzel, z. B. \"index.html\", \"assets/style.css\".\nDient dazu, Design-Artefakte (HTML/CSS/JS) im Dateisystem zu persistieren; die Canvas aktualisiert sich in Echtzeit.\nNur bei neuen Dateien oder ausdrücklichem Wunsch des Nutzers nach komplettem Refactor verwenden; zum Ändern bestehender Dateien bevorzugt file_patch verwenden, um Token zu sparen.";
+"tool.desc.fileWrite.path" = "Relativer Pfad, z. B. index.html";
+"tool.desc.fileWrite.content" = "UTF-8-Textinhalt";
+"tool.desc.filePatch" = "Lokales Ersetzen eines Teils des Inhalts einer bestehenden Datei (SEARCH/REPLACE). Für das Ändern bestehender Dateien bevorzugt verwenden; spart erheblich Token und beschleunigt die Antwort.\nÜbergib den zu suchenden Originaltext als `search` und den neuen Inhalt als `replace`; das Werkzeug lokalisiert `search` in der Datei und ersetzt ihn durch `replace`.\n`search` muss eindeutig matchen (0 oder mehrere Treffer schlagen fehl; füge mehr Kontextzeilen hinzu, um es eindeutig zu machen).\nEin leerer `replace`-String löscht den `search`-Block.";
+"tool.desc.filePatch.path" = "Relativer Pfad, z. B. index.html";
+"tool.desc.filePatch.search" = "Zu suchender und zu ersetzender Originaltext; muss ein exaktes Snippet aus der Datei sein (inkl. Einrückung/Zeilenumbrüchen) und eindeutig";
+"tool.desc.filePatch.replace" = "Neuer Inhalt; leerer String löscht den search-Block";
+"tool.desc.fileRead" = "Lies eine Datei aus dem Arbeitsverzeichnis der Session und gib den UTF-8-Textinhalt zurück.";
+"tool.desc.fileRead.path" = "Relativer Pfad";
+"tool.desc.fileList" = "Liste alle Dateien im Arbeitsverzeichnis der Session auf (inkl. Unterverzeichnisse) und gib ein JSON-Array zurück.";
+"tool.desc.fileRemove" = "Lösche eine Datei.";
+"tool.desc.fileRemove.path" = "Relativer Pfad";
+"tool.desc.fileMkdir" = "Erstelle ein Unterverzeichnis (unterstützt verschachtelte Pfade).";
+"tool.desc.fileMkdir.path" = "Relativer Pfad";

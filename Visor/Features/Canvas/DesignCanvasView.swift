@@ -100,7 +100,7 @@ struct DesignCanvasView: View {
                 Image(systemName: "paintbrush.pointed.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
-                Text(activePath.isEmpty ? "设计画布" : (activePath as NSString).lastPathComponent)
+                Text(activePath.isEmpty ? "canvas.title".l : (activePath as NSString).lastPathComponent)
                     .font(.visorBody)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -116,28 +116,28 @@ struct DesignCanvasView: View {
                 CircularGlassButton(systemName: "folder.badge.gearshape", action: {
                     showFileManager = true
                 })
-                .accessibilityLabel("文件管理")
+                .accessibilityLabel("canvas.toolbar.fileManager".l)
 
                 CircularGlassButton(systemName: "arrow.clockwise", action: {
                     reloadTrigger += 1
                 })
-                .accessibilityLabel("刷新画布")
+                .accessibilityLabel("canvas.toolbar.refresh".l)
 
                 CircularGlassButton(
                     systemName: showSource ? "eye.slash" : "chevron.left.forwardslash.chevron.right",
                     action: { showSource.toggle() }
                 )
-                .accessibilityLabel("显示 / 隐藏源代码")
+                .accessibilityLabel("canvas.toolbar.toggleSource".l)
 
                 CircularGlassButton(systemName: "square.and.arrow.up", action: {
                     exportHTML()
                 })
-                .accessibilityLabel("导出 HTML")
+                .accessibilityLabel("canvas.toolbar.export".l)
 
                 CircularGlassButton(systemName: "gearshape", action: {
                     showSettings.toggle()
                 })
-                .accessibilityLabel("画布设置")
+                .accessibilityLabel("canvas.toolbar.settings".l)
             }
         }
         .padding(.horizontal, DesignTokens.Spacing.l)
@@ -148,24 +148,24 @@ struct DesignCanvasView: View {
 
     private var canvasSettingsPopover: some View {
         VStack(alignment: .leading, spacing: DesignTokens.Spacing.l) {
-            Text("画布渲染设置")
+            Text("canvas.settings.title".l)
                 .font(.visorTitle)
 
             if !isFillContainer {
-                Text("当前预览: \(Int(previewSize.width)) × \(Int(previewSize.height))")
+                Text("canvas.settings.previewSize".l(Int(previewSize.width), Int(previewSize.height)))
                     .font(.visorCaption)
                     .foregroundStyle(.secondary)
             } else {
-                Text("填满画布，尺寸随窗口自适应")
+                Text("canvas.settings.fillHint".l)
                     .font(.visorCaption)
                     .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-                Text("预览宽度 (px，0 = 填满)")
+                Text("canvas.settings.width".l)
                     .font(.visorCaption)
                     .foregroundStyle(.secondary)
-                TextField("填满", value: $canvasWidth, format: .number)
+                TextField("canvas.settings.placeholder".l, value: $canvasWidth, format: .number)
                     .font(.visorBody)
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.numberPad)
@@ -175,10 +175,10 @@ struct DesignCanvasView: View {
             }
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-                Text("预览高度 (px，0 = 填满)")
+                Text("canvas.settings.height".l)
                     .font(.visorCaption)
                     .foregroundStyle(.secondary)
-                TextField("填满", value: $canvasHeight, format: .number)
+                TextField("canvas.settings.placeholder".l, value: $canvasHeight, format: .number)
                     .font(.visorBody)
                     .textFieldStyle(.roundedBorder)
                     .keyboardType(.numberPad)
@@ -188,7 +188,7 @@ struct DesignCanvasView: View {
             }
 
             VStack(alignment: .leading, spacing: DesignTokens.Spacing.s) {
-                Text("圆角 (pt，最大 \(Int(maxRadius)))")
+                Text("canvas.settings.radius".l(Int(maxRadius)))
                     .font(.visorCaption)
                     .foregroundStyle(.secondary)
                 TextField("\(Int(defaultsRadius))", value: $canvasRadius, format: .number)
@@ -206,7 +206,7 @@ struct DesignCanvasView: View {
             }
 
             HStack {
-                Button("复位 — 填满画布") {
+                Button("canvas.settings.reset".l) {
                     canvasWidth  = 0
                     canvasHeight = 0
                     canvasRadius = defaultsRadius
@@ -284,9 +284,9 @@ struct DesignCanvasView: View {
             Image(systemName: "rectangle.dashed")
                 .font(.system(size: 56))
                 .foregroundStyle(.secondary)
-            Text("画布为空")
+            Text("canvas.empty.title".l)
                 .font(.visorTitle)
-            Text("在下方聊天框输入设计需求")
+            Text("canvas.empty.hint".l)
                 .font(.visorBody)
                 .foregroundStyle(.secondary)
         }
@@ -294,7 +294,7 @@ struct DesignCanvasView: View {
 
     private var sourcePanel: some View {
         ScrollView {
-            Text(currentHTML.isEmpty ? "（无内容）" : currentHTML)
+            Text(currentHTML.isEmpty ? "canvas.source.empty".l : currentHTML)
                 .font(.system(size: 13, design: .monospaced))
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -361,7 +361,7 @@ struct DesignCanvasView: View {
 
     private func exportHTML() {
         guard !currentHTML.isEmpty else {
-            withAnimation { copyToast = "画布为空，无内容可导出" }
+            withAnimation { copyToast = "canvas.export.empty".l }
             Task {
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 await MainActor.run { withAnimation { copyToast = nil } }
@@ -375,7 +375,7 @@ struct DesignCanvasView: View {
             try currentHTML.write(to: url, atomically: true, encoding: .utf8)
             presentShareSheet(url: url)
         } catch {
-            withAnimation { copyToast = "导出失败：\(error.localizedDescription)" }
+            withAnimation { copyToast = "canvas.export.failed".l(error.localizedDescription) }
             Task {
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 await MainActor.run { withAnimation { copyToast = nil } }
@@ -391,11 +391,11 @@ struct DesignCanvasView: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
             guard let content = try? String(contentsOf: url, encoding: .utf8) else {
-                await MainActor.run { copyToast = "无法读取文件（可能不是 UTF-8 文本）" }
+                await MainActor.run { copyToast = "canvas.error.readFile".l }
                 return
             }
             guard content.utf8.count < 1_000_000 else {
-                await MainActor.run { copyToast = "文件过大（>1MB）" }
+                await MainActor.run { copyToast = "canvas.error.fileTooLarge".l }
                 return
             }
 
@@ -408,14 +408,14 @@ struct DesignCanvasView: View {
                     sessionId: sid, path: filename, kind: .write, switchTo: isHTML
                 )
                 await MainActor.run {
-                    copyToast = "✓ 已导入：\(filename)"
+                    copyToast = "canvas.import.success".l(filename)
                     Task {
                         try? await Task.sleep(nanoseconds: 1_500_000_000)
                         await MainActor.run { withAnimation { copyToast = nil } }
                     }
                 }
             } catch {
-                await MainActor.run { copyToast = "导入失败：\(error.localizedDescription)" }
+                await MainActor.run { copyToast = "canvas.import.failed".l(error.localizedDescription) }
             }
         }
     }

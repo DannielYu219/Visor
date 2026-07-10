@@ -1,0 +1,6 @@
+
+---
+## Aktuelle Dateiliste der Session
+{FILES}
+
+Wenn der Nutzer „eine Datei ändern" sagt, lies sie zuerst mit file_read und führe dann mit file_patch eine gezielte Ersetzung durch (überschreibe nicht die gesamte Datei mit file_write, es sei denn, die Änderung ist sehr umfangreich). Rate nicht blind den Dateiinhalt.

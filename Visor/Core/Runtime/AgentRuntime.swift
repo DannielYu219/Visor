@@ -107,7 +107,7 @@ final class AgentRuntime: @unchecked Sendable {
             log(continuation, "✓ FileSystemStore ok")
         } catch {
             log(continuation, "✗ FileSystemStore failed: \(error)")
-            continuation.yield(.error("文件系统初始化失败：\(error.localizedDescription)"))
+            continuation.yield(.error("chat.error.fsInit".l(error.localizedDescription)))
             return
         }
 
@@ -120,24 +120,20 @@ final class AgentRuntime: @unchecked Sendable {
         do {
             let entries = try fs.list()
             if entries.isEmpty {
-                fileContext = "(空)"
+                fileContext = "(" + "fileContext.empty".l + ")"
             } else {
                 fileContext = entries.map { "- \($0.path) (\($0.size)B)" }.joined(separator: "\n")
             }
         } catch {
-            fileContext = "(读取失败：\(error.localizedDescription))"
+            fileContext = "(" + "fileContext.readFailed".l(error.localizedDescription) + ")"
         }
-        let fileContextFragment = """
+        let fileContextTemplate = PromptLocalizer.text(named: "file_context_template")
+        let fileContextFragment = fileContextTemplate.replacingOccurrences(of: "{FILES}", with: fileContext)
 
----
-## 当前 session 文件清单
-\(fileContext)
-
-用户说「修改某个文件」时，请先用 file_read 读取该文件，再用 file_patch 做局部替换（不要用 file_write 覆盖整个文件，除非改动极大）。不要凭空猜测文件内容。
-"""
-
-        let combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLISkillFragment + fileContextFragment
-        let userMsgWithHint = userInput + "\n\n[系统提示] 请先用 1-2 句中文告诉用户你打算做什么，然后再调用工具。"
+        let visorCLIFragment = PromptLocalizer.text(named: "visor_cli")
+        let combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLIFragment + fileContextFragment
+        let agentHint = PromptLocalizer.text(named: "agent_user_hint")
+        let userMsgWithHint = userInput + "\n\n" + agentHint
         var messages: [Message] = [.system(combinedSystemPrompt)]
         messages.append(contentsOf: history)
         // 多模态：若有图片则构建 vision user 消息
@@ -216,7 +212,7 @@ final class AgentRuntime: @unchecked Sendable {
             } catch {
                 watchdog.cancel()
                 log(continuation, "✗ stream error: \(error)")
-                continuation.yield(.error("流式响应异常：\(error.localizedDescription)"))
+                continuation.yield(.error("chat.error.stream".l(error.localizedDescription)))
                 return
             }
             watchdog.cancel()
@@ -237,7 +233,7 @@ final class AgentRuntime: @unchecked Sendable {
             }
 
             if finishReason == "error" {
-                continuation.yield(.error("模型返回 finish_reason=error"))
+                continuation.yield(.error("chat.error.modelError".l))
                 return
             }
 
@@ -289,7 +285,7 @@ final class AgentRuntime: @unchecked Sendable {
                 // 直接执行会误删文件内容或写入截断内容，必须跳过并要求重试
                 if entry.wasRepaired && (tc.function.name == "file_patch" || tc.function.name == "file_write") {
                     log(continuation, "⚠ skipping \(tc.function.name): args repaired (truncated), requesting retry")
-                    let result = #"{"error":"truncated_args","ok":false,"message":"参数因流式截断被修复，为防止误删/写入空内容已跳过执行。请重新调用并确保参数完整；若内容较大请用 file_patch 做局部替换（payload 更小不易截断）。"}"#
+                    let result = #"{"error":"truncated_args","ok":false,"message":"\#("tool.error.truncatedArgs".l)"}"#
                     let toolMsg = Message(role: "tool", content: .text(result), toolCallId: tc.id, name: tc.function.name)
                     messages.append(toolMsg)
                     continuation.yield(.toolMessage(toolMsg))
@@ -388,38 +384,3 @@ final class AgentRuntime: @unchecked Sendable {
         }
     }
 }
-
-private let visorCLISkillFragment: String = """
-## visor-cli
-
-你是一个面向设计稿的 Agent。当用户让你设计 HTML / 写 CSS / 改样式时：
-
-### 强制工作流
-1. **先说话**：用 1-2 句中文告诉用户你打算做什么
-2. **再调用工具**：把改动落到工作目录
-3. **最后总结**：工具返回后，用 1-2 句中文总结
-
-### 工具（按优先级排列）
-- `file_patch`：**修改已有文件的首选工具**。参数 `path` + `search`（要替换的原文）+ `replace`（替换后的内容）。只发送变更片段，极大节约 token 并显著提升速度，且不易因流式截断出错。`search` 必须是文件中的精确片段（含缩进/换行）且唯一匹配；`replace` 为空串表示删除该片段。若 0 匹配请先用 `file_read` 核对内容；若多次匹配请在 `search` 中补充更多上下文行使其唯一。
-- `file_write`：参数 `path`（相对路径如 `index.html`）+ `content`（完整文件内容）。**仅用于新建文件，或用户明确要求重写/重构整个文件时。** 修改已有文件时禁止用 file_write 覆盖——长内容易被流式截断导致写入空/截断内容。
-- `file_read`：参数 `path`，读取文件内容。修改文件前若不确定精确内容，先 read 再 patch。
-- `file_list`：列出 session 内所有文件。
-- `file_remove`：参数 `path`，删除文件。
-- `file_mkdir`：参数 `path`，创建子目录。
-
-### 修改文件的决策树（必须遵守）
-- 文件已存在且只需改几行/一段？→ **`file_patch`**（禁止用 file_write 覆盖）
-- 文件不存在，需要新建？→ **`file_write`**（完整内容）
-- 用户明确说「重写整个文件 / 推翻重来」？→ **`file_write`**（完整内容）
-- 其他修改场景？→ **默认 `file_patch`**
-
-用 `file_write` 覆盖整个文件来修改几行是严重错误：浪费 token、拖慢响应、且长 content 易被流式截断导致文件损坏。
-
-### 文件组织
-画布自动读取 `index.html` 并实时刷新。按文件组织：
-```
-index.html
-assets/style.css
-assets/app.js
-```
-"""

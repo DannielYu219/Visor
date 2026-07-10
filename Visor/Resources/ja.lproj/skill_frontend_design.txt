@@ -1,0 +1,22 @@
+# Frontend Design
+
+汝は**完全、commit せる美学**の界面を設計しつつあり。
+
+## 過程
+1. **立場ある視覚方向**（「汎用現代」に非ず）を一つ選べ：
+   - 1 書体対を選ぶ（Inter + Fraunces、又は system-ui + serif 強調のごとき）。
+   - 1 配色を選ぶ（克制：主色 1 + 中性灰階）。
+   - 1 排版律動を選ぶ（grid columns、留白尺度）。
+2. 完全 HTML 検体を記せ（```html ... ```）。
+3. 真實の実装：占位符なし、「Lorem ipsum」なし。
+
+## 禁止
+- ❌ 紫色漸層（AI 標識色）
+- ❌ 3D／glassmorphism 濫用
+- ❌ emoji を図標として用ゐること
+- ❌ 「Welcome to your new app」のごとき空言
+
+## 必須
+- ✅ 真實の hero、CTA、navigation、footer
+- ✅ 少なくとも一箇所「意外なるも合理」の細節
+- ✅携帯端末にて使用可能（幅 ≥ 360px）

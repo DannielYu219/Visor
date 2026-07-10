@@ -1,0 +1,233 @@
+/* Visor — Français */
+
+/* ===== Commun ===== */
+"common.done" = "Terminé";
+"common.cancel" = "Annuler";
+"common.save" = "Enregistrer";
+"common.delete" = "Supprimer";
+"common.edit" = "Modifier";
+"common.add" = "Ajouter";
+"common.export" = "Exporter";
+"common.ok" = "OK";
+"common.retry" = "Réessayer";
+"common.later" = "Plus tard";
+
+/* ===== Langue ===== */
+"lang.system" = "Système";
+"settings.language.title" = "Langue de l'app";
+"settings.language.subtitle" = "Effectif immédiatement, sans redémarrage";
+"settings.language.restart.hint" = "Si l'interface ne se rafraîchit pas, relancer l'app";
+
+/* ===== Réglages ===== */
+"settings.title" = "Réglages";
+"settings.apikey.title" = "Clé API OpenRouter";
+"settings.apikey.placeholder" = "Clé API";
+"settings.apikey.show" = "Afficher la clé API";
+"settings.apikey.hide" = "Masquer la clé API";
+"settings.apikey.save" = "Enregistrer dans le trousseau";
+"settings.apikey.clear" = "Effacer la clé enregistrée";
+"settings.apikey.saved" = "Enregistré";
+"settings.apikey.empty" = "La clé API ne peut pas être vide";
+
+"settings.customProvider.title" = "Fournisseurs personnalisés";
+"settings.customProvider.empty" = "Ajouter des fournisseurs personnalisés compatibles OpenAI (ex. OpenAI, Together, Groq)";
+"settings.customProvider.modelCount" = "%d modèles";
+
+"settings.budget.title" = "Budget (USD)";
+"settings.budget.session" = "Session";
+"settings.budget.daily" = "Journalier";
+"settings.budget.monthly" = "Mensuel";
+"settings.budget.apply" = "Appliquer le budget";
+
+"settings.pricing.title" = "Tarifs des modèles (en direct)";
+"settings.pricing.row" = "entrée $%.2f / sortie $%.2f";
+
+/* ===== Éditeur de fournisseur ===== */
+"provider.editor.section.info" = "Infos fournisseur";
+"provider.editor.name" = "Nom";
+"provider.editor.name.placeholder" = "ex. Mon OpenAI";
+"provider.editor.baseURL" = "Base URL";
+"provider.editor.baseURL.hint" = "Format compatible OpenAI, doit inclure le chemin /v1";
+"provider.editor.apiKey.title" = "Clé API";
+"provider.editor.apiKey.existing" = "Clé API configurée (laisser vide pour conserver)";
+"provider.editor.apiKey.placeholder" = "Clé API";
+"provider.editor.test" = "Tester la connexion";
+"provider.editor.testing" = "Test en cours…";
+"provider.editor.test.success" = "✓ Connecté, %d modèles";
+"provider.editor.test.failure" = "✗ %@";
+"provider.editor.test.baseURLInvalid" = "Base URL invalide";
+"provider.editor.test.apiKeyMissing" = "Veuillez d'abord saisir la clé API";
+"provider.editor.test.responseInvalid" = "Format de réponse inattendu";
+"provider.editor.test.apiKeyInvalid" = "Clé API invalide (%d)";
+"provider.editor.test.httpError" = "HTTP %d : %@";
+"provider.editor.deepseek.title" = "Mode réflexion DeepSeek";
+"provider.editor.deepseek.intensity" = "Intensité de réflexion";
+"provider.editor.deepseek.hint" = "High — pour tâches normales ; Max — pour tâches d'agent complexes";
+"provider.editor.models.title" = "Liste des modèles";
+"provider.editor.models.add" = "Ajouter un modèle";
+"provider.editor.models.empty" = "Ajouter au moins un modèle";
+"provider.editor.model.idPlaceholder" = "ID du modèle (ex. deepseek-v4-pro)";
+"provider.editor.model.displayName" = "Nom affiché";
+"provider.editor.model.supportsVision" = "Prend en charge l'entrée image";
+"provider.editor.title.new" = "Ajouter un fournisseur personnalisé";
+"provider.editor.title.edit" = "Modifier le fournisseur";
+"provider.editor.error.nameRequired" = "Veuillez saisir le nom du fournisseur";
+"provider.editor.error.urlInvalid" = "Base URL invalide";
+"provider.editor.error.modelIdLikeURL" = "L'ID de modèle « %@ » ressemble à une URL. Veuillez saisir un nom de modèle (ex. deepseek-v4-pro)";
+"provider.editor.error.noValidModels" = "Ajouter au moins un modèle valide (ID et nom affiché requis)";
+
+/* Modes DeepSeek */
+"deepseek.mode.disabled" = "Désactivé";
+"deepseek.mode.high" = "High";
+"deepseek.mode.max" = "Max";
+
+/* ===== Chat ===== */
+"chat.empty.hint" = "Essayez « créer un pitch deck » ou « concevoir une page de connexion »";
+"chat.modelPicker" = "Choisir un modèle";
+"chat.skillRouted" = "Routé vers %@";
+"chat.token.in" = "entrée %d";
+"chat.token.out" = "sortie %d";
+"chat.error.stream" = "Erreur de flux de réponse : %@";
+"chat.error.fsInit" = "Échec d'initialisation du système de fichiers : %@";
+"chat.error.modelError" = "Le modèle a renvoyé finish_reason=error";
+"chat.tool.calling" = "🔧 Appel de l'outil : %@…";
+"chat.tool.called" = "🔧 Outil appelé : %@";
+
+/* Barre de saisie */
+"composer.placeholder" = "Saisir un message…";
+"composer.send" = "Envoyer le message";
+"composer.stop" = "Arrêter la génération";
+"composer.attach" = "Ajouter une pièce jointe";
+"composer.attach.photo" = "Photo";
+"composer.attach.file" = "Fichier";
+"composer.processingImage" = "Traitement de l'image…";
+"composer.error.pickFile" = "Échec du sélecteur de fichier : %@";
+"composer.error.imageLoad" = "Échec du chargement de l'image";
+"composer.error.imageFormat" = "Format d'image invalide";
+"composer.error.imageEncode" = "Échec de l'encodage de l'image";
+"composer.error.imageTooLarge" = "Image trop volumineuse (>4 Mo), veuillez en choisir une plus petite";
+"composer.error.tooManyImages" = "Jusqu'à %d images";
+"composer.error.visionUnsupported" = "Le modèle actuel ne prend pas en charge l'entrée image. Passer à GPT-4o / Gemini Flash / Claude Haiku";
+
+/* ===== Barre latérale ===== */
+"sidebar.title" = "Sessions";
+"sidebar.new" = "Nouvelle session";
+"sidebar.delete" = "Supprimer la session";
+"sidebar.newSession.defaultTitle" = "Nouvelle session";
+
+/* ===== Root / États vides ===== */
+"root.empty.apiKey.title" = "Configurez d'abord la clé API OpenRouter";
+"root.empty.apiKey.subtitle" = "Collez votre clé API dans les Réglages pour commencer à concevoir";
+"root.empty.apiKey.action" = "Ouvrir les Réglages";
+"root.placeholder.noSession" = "Aucune session sélectionnée";
+"root.placeholder.noCanvas" = "Aucun canevas";
+
+/* ===== Canevas ===== */
+"canvas.title" = "Canevas de design";
+"canvas.empty.title" = "Le canevas est vide";
+"canvas.empty.hint" = "Saisissez une demande de design dans le chat ci-dessous";
+"canvas.toolbar.fileManager" = "Gestion des fichiers";
+"canvas.toolbar.refresh" = "Rafraîchir le canevas";
+"canvas.toolbar.toggleSource" = "Afficher / masquer le code source";
+"canvas.toolbar.export" = "Exporter le HTML";
+"canvas.toolbar.settings" = "Réglages du canevas";
+"canvas.settings.title" = "Réglages de rendu du canevas";
+"canvas.settings.previewSize" = "Aperçu : %d × %d";
+"canvas.settings.fillHint" = "Remplit le canevas, la taille s'adapte à la fenêtre";
+"canvas.settings.width" = "Largeur d'aperçu (px, 0 = remplir)";
+"canvas.settings.height" = "Hauteur d'aperçu (px, 0 = remplir)";
+"canvas.settings.radius" = "Rayon d'angle (pt, max %d)";
+"canvas.settings.reset" = "Réinitialiser — remplir le canevas";
+"canvas.settings.placeholder" = "Remplir";
+"canvas.source.empty" = "(vide)";
+"canvas.export.empty" = "Le canevas est vide, rien à exporter";
+"canvas.export.failed" = "Échec de l'export : %@";
+"canvas.import.success" = "✓ Importé : %@";
+"canvas.import.failed" = "Échec de l'import : %@";
+"canvas.error.readFile" = "Impossible de lire le fichier (peut ne pas être du texte UTF-8)";
+"canvas.error.fileTooLarge" = "Fichier trop volumineux (>1 Mo)";
+
+/* ===== Sheet gestion des fichiers ===== */
+"fileManager.title" = "Fichiers";
+"fileManager.empty.title" = "Aucun fichier";
+"fileManager.empty.hint" = "Appuyez sur « + Depuis un fichier » ci-dessous pour importer";
+"fileManager.import" = "Depuis un fichier";
+"fileManager.imported" = "Importé : %@";
+"fileManager.error.pick" = "Échec du sélecteur de fichier : %@";
+"fileManager.error.read" = "Échec de la lecture : %@";
+"fileManager.error.delete" = "Échec de la suppression : %@";
+"fileManager.error.export" = "Échec de l'export : %@";
+"fileManager.deleted" = "Supprimé : %@";
+"fileManager.preview" = "Aperçu %@ :\n%@…";
+
+/* ===== Debug ===== */
+"debug.tab.terminal" = "Terminal";
+"debug.tab.token" = "Tokens";
+"debug.tab.error" = "Erreurs";
+"debug.empty.terminal" = "En attente de sortie CLI…";
+"debug.empty.token" = "En attente des stats de tokens…";
+"debug.empty.error" = "Aucune erreur";
+"debug.action.clear" = "Vider";
+"debug.action.copyAll" = "Tout copier";
+
+/* ===== Compteur de coûts ===== */
+"cost.title" = "Aperçu des coûts";
+"cost.session" = "Cette session";
+"cost.daily" = "Aujourd'hui";
+"cost.monthly" = "Ce mois-ci";
+
+/* ===== Bulle de message ===== */
+"message.reasoning.title" = "Raisonnement";
+"message.image.decodeFailed" = "Échec du décodage de l'image";
+
+/* ===== Erreurs ChatViewModel ===== */
+"chatvm.error.readFile" = "Impossible de lire le fichier (peut ne pas être du texte UTF-8)";
+"chatvm.error.fileTooLarge" = "Fichier trop volumineux (>1 Mo), veuillez en choisir un plus petit";
+"chatvm.imported" = "✓ Fichier importé : %@ (%d o)";
+"chatvm.error.write" = "Échec de l'écriture du fichier : %@";
+
+/* ===== Noms affichés des skills ===== */
+"skill.frontendDesign" = "Design Frontend";
+"skill.openDesign" = "Open Design";
+"skill.makeADeck" = "Slide Deck";
+"skill.wireframe" = "Wireframe";
+
+/* ===== Erreurs Trousseau ===== */
+"keychain.error.unhandled" = "Erreur Trousseau (OSStatus %d)";
+"keychain.error.dataConversion" = "Échec de la conversion des données Trousseau";
+"keychain.error.notFound" = "Élément du Trousseau introuvable";
+
+/* ===== Erreurs système de fichiers ===== */
+"fs.error.pathTraversal" = "Traversée de chemin : %@";
+
+/* ===== Contexte de fichier (injecté par AgentRuntime) ===== */
+"fileContext.empty" = "vide";
+"fileContext.readFailed" = "Échec de lecture : %@";
+
+/* ===== Résultats des outils ===== */
+"tool.error.unknown" = "Outil introuvable : %@";
+"tool.error.pathEmpty" = "path ne peut pas être vide";
+"tool.error.searchEmpty" = "search ne peut pas être vide (utilisez file_write pour vider tout le fichier)";
+"tool.error.fileNotFound" = "Fichier introuvable : %@ (créez-le d'abord avec file_write)";
+"tool.error.readFailed" = "Échec de la lecture : %@";
+"tool.error.searchNotFound" = "Bloc search introuvable dans le fichier. Vérifiez que l'indentation/retours à la ligne correspondent exactement, ou utilisez file_read pour voir le contenu actuel.";
+"tool.error.searchAmbiguous" = "Le bloc search correspond %d fois. Ajoutez plus de lignes de contexte pour le rendre unique.";
+"tool.error.internalReplace" = "Échec du remplacement";
+"tool.error.writeFailed" = "Échec de l'écriture : %@";
+"tool.error.truncatedArgs" = "Les arguments ont été réparés en raison d'une troncature du flux. L'exécution a été sautée pour éviter toute perte de données. Veuillez rappeler avec des arguments complets ; pour un contenu volumineux, utilisez file_patch (charge utile plus petite, moins sujette à la troncature).";
+
+/* ===== Descriptions d'outils (envoyées au LLM) ===== */
+"tool.desc.fileWrite" = "Écrire ou écraser un fichier dans le répertoire de travail de la session courante. Le chemin est relatif à la racine de la session, par ex. \"index.html\", \"assets/style.css\".\nSert à persister les artefacts de design (HTML/CSS/JS) dans le système de fichiers ; le canvas se rafraîchit en temps réel.\nÀ utiliser uniquement pour les nouveaux fichiers ou quand l'utilisateur demande explicitement un refactoring complet ; préférer file_patch pour modifier les fichiers existants et économiser des tokens.";
+"tool.desc.fileWrite.path" = "Chemin relatif, par ex. index.html";
+"tool.desc.fileWrite.content" = "Contenu texte UTF-8";
+"tool.desc.filePatch" = "Remplacement local d'une partie du contenu d'un fichier existant (SEARCH/REPLACE). À privilégier pour modifier les fichiers existants ; économise considérablement des tokens et accélère la réponse.\nPasse le texte original à rechercher comme `search` et le nouveau contenu comme `replace` ; l'outil localise `search` dans le fichier et le remplace par `replace`.\n`search` doit correspondre de manière unique (0 ou plusieurs correspondances échouent ; ajoute plus de lignes de contexte pour le rendre unique).\nUne chaîne `replace` vide supprime le bloc `search`.";
+"tool.desc.filePatch.path" = "Chemin relatif, par ex. index.html";
+"tool.desc.filePatch.search" = "Texte original à rechercher et remplacer ; doit être un extrait exact du fichier (indentation/retours à ligne inclus) et unique";
+"tool.desc.filePatch.replace" = "Nouveau contenu ; chaîne vide supprime le bloc search";
+"tool.desc.fileRead" = "Lire un fichier du répertoire de travail de la session, en renvoyant le contenu texte UTF-8.";
+"tool.desc.fileRead.path" = "Chemin relatif";
+"tool.desc.fileList" = "Lister tous les fichiers du répertoire de travail de la session (y compris les sous-répertoires), en renvoyant un tableau JSON.";
+"tool.desc.fileRemove" = "Supprimer un fichier.";
+"tool.desc.fileRemove.path" = "Chemin relatif";
+"tool.desc.fileMkdir" = "Créer un sous-répertoire (prend en charge les chemins imbriqués).";
+"tool.desc.fileMkdir.path" = "Chemin relatif";

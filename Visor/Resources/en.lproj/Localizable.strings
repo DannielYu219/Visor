@@ -1,0 +1,233 @@
+/* Visor — English (US) */
+
+/* ===== Common ===== */
+"common.done" = "Done";
+"common.cancel" = "Cancel";
+"common.save" = "Save";
+"common.delete" = "Delete";
+"common.edit" = "Edit";
+"common.add" = "Add";
+"common.export" = "Export";
+"common.ok" = "OK";
+"common.retry" = "Retry";
+"common.later" = "Later";
+
+/* ===== Language ===== */
+"lang.system" = "Follow System";
+"settings.language.title" = "App Language";
+"settings.language.subtitle" = "Takes effect immediately, no restart needed";
+"settings.language.restart.hint" = "If the UI doesn't refresh, please restart the app";
+
+/* ===== Settings ===== */
+"settings.title" = "Settings";
+"settings.apikey.title" = "OpenRouter API Key";
+"settings.apikey.placeholder" = "API Key";
+"settings.apikey.show" = "Show API Key";
+"settings.apikey.hide" = "Hide API Key";
+"settings.apikey.save" = "Save to Keychain";
+"settings.apikey.clear" = "Clear Saved Key";
+"settings.apikey.saved" = "Saved";
+"settings.apikey.empty" = "API Key cannot be empty";
+
+"settings.customProvider.title" = "Custom Providers";
+"settings.customProvider.empty" = "Add OpenAI-compatible custom providers (e.g. OpenAI, Together, Groq)";
+"settings.customProvider.modelCount" = "%d models";
+
+"settings.budget.title" = "Budget (USD)";
+"settings.budget.session" = "Session";
+"settings.budget.daily" = "Daily";
+"settings.budget.monthly" = "Monthly";
+"settings.budget.apply" = "Apply Budget";
+
+"settings.pricing.title" = "Model Pricing (Live)";
+"settings.pricing.row" = "in $%.2f / out $%.2f";
+
+/* ===== Custom Provider Editor ===== */
+"provider.editor.section.info" = "Provider Info";
+"provider.editor.name" = "Name";
+"provider.editor.name.placeholder" = "e.g. My OpenAI";
+"provider.editor.baseURL" = "Base URL";
+"provider.editor.baseURL.hint" = "OpenAI-compatible format, must include /v1 path";
+"provider.editor.apiKey.title" = "API Key";
+"provider.editor.apiKey.existing" = "API Key configured (leave blank to keep current)";
+"provider.editor.apiKey.placeholder" = "API Key";
+"provider.editor.test" = "Test Connection";
+"provider.editor.testing" = "Testing…";
+"provider.editor.test.success" = "✓ Connected, %d models";
+"provider.editor.test.failure" = "✗ %@";
+"provider.editor.test.baseURLInvalid" = "Base URL is invalid";
+"provider.editor.test.apiKeyMissing" = "Please enter API Key first";
+"provider.editor.test.responseInvalid" = "Unexpected response format";
+"provider.editor.test.apiKeyInvalid" = "API Key invalid (%d)";
+"provider.editor.test.httpError" = "HTTP %d: %@";
+"provider.editor.deepseek.title" = "DeepSeek Thinking Mode";
+"provider.editor.deepseek.intensity" = "Reasoning intensity";
+"provider.editor.deepseek.hint" = "High — for normal tasks; Max — for complex agent tasks";
+"provider.editor.models.title" = "Model List";
+"provider.editor.models.add" = "Add Model";
+"provider.editor.models.empty" = "Add at least one model";
+"provider.editor.model.idPlaceholder" = "Model ID (e.g. deepseek-v4-pro)";
+"provider.editor.model.displayName" = "Display Name";
+"provider.editor.model.supportsVision" = "Supports image input";
+"provider.editor.title.new" = "Add Custom Provider";
+"provider.editor.title.edit" = "Edit Provider";
+"provider.editor.error.nameRequired" = "Please enter provider name";
+"provider.editor.error.urlInvalid" = "Base URL is invalid";
+"provider.editor.error.modelIdLikeURL" = "Model ID \"%@\" looks like a URL. Please enter a model name (e.g. deepseek-v4-pro)";
+"provider.editor.error.noValidModels" = "Add at least one valid model (ID and display name required)";
+
+/* DeepSeek thinking modes */
+"deepseek.mode.disabled" = "Off";
+"deepseek.mode.high" = "High";
+"deepseek.mode.max" = "Max";
+
+/* ===== Chat ===== */
+"chat.empty.hint" = "Try \"make a pitch deck\" or \"design a login page\"";
+"chat.modelPicker" = "Select model";
+"chat.skillRouted" = "Routed to %@";
+"chat.token.in" = "in %d";
+"chat.token.out" = "out %d";
+"chat.error.stream" = "Stream response error: %@";
+"chat.error.fsInit" = "Filesystem init failed: %@";
+"chat.error.modelError" = "Model returned finish_reason=error";
+"chat.tool.calling" = "🔧 Calling tool: %@…";
+"chat.tool.called" = "🔧 Tool call: %@";
+
+/* ComposerBar */
+"composer.placeholder" = "Type a message…";
+"composer.send" = "Send message";
+"composer.stop" = "Stop generation";
+"composer.attach" = "Add attachment";
+"composer.attach.photo" = "Photo";
+"composer.attach.file" = "File";
+"composer.processingImage" = "Processing image…";
+"composer.error.pickFile" = "File picker failed: %@";
+"composer.error.imageLoad" = "Image load failed";
+"composer.error.imageFormat" = "Image format invalid";
+"composer.error.imageEncode" = "Image encode failed";
+"composer.error.imageTooLarge" = "Image too large (>4MB), please pick a smaller one";
+"composer.error.tooManyImages" = "Up to %d images";
+"composer.error.visionUnsupported" = "Current model doesn't support image input. Switch to GPT-4o / Gemini Flash / Claude Haiku";
+
+/* ===== Sidebar ===== */
+"sidebar.title" = "Sessions";
+"sidebar.new" = "New session";
+"sidebar.delete" = "Delete session";
+"sidebar.newSession.defaultTitle" = "New session";
+
+/* ===== Root / Empty states ===== */
+"root.empty.apiKey.title" = "Configure OpenRouter API Key first";
+"root.empty.apiKey.subtitle" = "Paste your API Key in Settings to start designing";
+"root.empty.apiKey.action" = "Open Settings";
+"root.placeholder.noSession" = "No session selected";
+"root.placeholder.noCanvas" = "No canvas";
+
+/* ===== Canvas ===== */
+"canvas.title" = "Design Canvas";
+"canvas.empty.title" = "Canvas is empty";
+"canvas.empty.hint" = "Type a design request in the chat below";
+"canvas.toolbar.fileManager" = "File manager";
+"canvas.toolbar.refresh" = "Refresh canvas";
+"canvas.toolbar.toggleSource" = "Show / hide source";
+"canvas.toolbar.export" = "Export HTML";
+"canvas.toolbar.settings" = "Canvas settings";
+"canvas.settings.title" = "Canvas render settings";
+"canvas.settings.previewSize" = "Preview: %d × %d";
+"canvas.settings.fillHint" = "Filling canvas, size auto-adapts to window";
+"canvas.settings.width" = "Preview width (px, 0 = fill)";
+"canvas.settings.height" = "Preview height (px, 0 = fill)";
+"canvas.settings.radius" = "Corner radius (pt, max %d)";
+"canvas.settings.reset" = "Reset — fill canvas";
+"canvas.settings.placeholder" = "Fill";
+"canvas.source.empty" = "(empty)";
+"canvas.export.empty" = "Canvas is empty, nothing to export";
+"canvas.export.failed" = "Export failed: %@";
+"canvas.import.success" = "✓ Imported: %@";
+"canvas.import.failed" = "Import failed: %@";
+"canvas.error.readFile" = "Cannot read file (may not be UTF-8 text)";
+"canvas.error.fileTooLarge" = "File too large (>1MB)";
+
+/* ===== File Manager Sheet ===== */
+"fileManager.title" = "Files";
+"fileManager.empty.title" = "No files";
+"fileManager.empty.hint" = "Tap \"+ From File\" below to upload";
+"fileManager.import" = "From File";
+"fileManager.imported" = "Imported: %@";
+"fileManager.error.pick" = "File picker failed: %@";
+"fileManager.error.read" = "Read failed: %@";
+"fileManager.error.delete" = "Delete failed: %@";
+"fileManager.error.export" = "Export failed: %@";
+"fileManager.deleted" = "Deleted: %@";
+"fileManager.preview" = "Preview %@:\n%@…";
+
+/* ===== Debug ===== */
+"debug.tab.terminal" = "Terminal";
+"debug.tab.token" = "Tokens";
+"debug.tab.error" = "Errors";
+"debug.empty.terminal" = "Waiting for CLI output…";
+"debug.empty.token" = "Waiting for token stats…";
+"debug.empty.error" = "No errors";
+"debug.action.clear" = "Clear";
+"debug.action.copyAll" = "Copy all";
+
+/* ===== CostMeter ===== */
+"cost.title" = "Cost Overview";
+"cost.session" = "This session";
+"cost.daily" = "Today";
+"cost.monthly" = "This month";
+
+/* ===== MessageBubble ===== */
+"message.reasoning.title" = "Reasoning";
+"message.image.decodeFailed" = "Image decode failed";
+
+/* ===== ChatViewModel errors ===== */
+"chatvm.error.readFile" = "Cannot read file (may not be UTF-8 text)";
+"chatvm.error.fileTooLarge" = "File too large (>1MB), please pick a smaller one";
+"chatvm.imported" = "✓ Imported file: %@ (%d B)";
+"chatvm.error.write" = "File write failed: %@";
+
+/* ===== Skill display names ===== */
+"skill.frontendDesign" = "Frontend Design";
+"skill.openDesign" = "Open Design";
+"skill.makeADeck" = "Slide Deck";
+"skill.wireframe" = "Wireframe";
+
+/* ===== Keychain errors ===== */
+"keychain.error.unhandled" = "Keychain error (OSStatus %d)";
+"keychain.error.dataConversion" = "Keychain data conversion failed";
+"keychain.error.notFound" = "Keychain item not found";
+
+/* ===== Filesystem errors ===== */
+"fs.error.pathTraversal" = "Path traversal: %@";
+
+/* ===== File context (injected by AgentRuntime) ===== */
+"fileContext.empty" = "empty";
+"fileContext.readFailed" = "read failed: %@";
+
+/* ===== Tool results ===== */
+"tool.error.unknown" = "Tool not found: %@";
+"tool.error.pathEmpty" = "path cannot be empty";
+"tool.error.searchEmpty" = "search cannot be empty (use file_write to clear the whole file)";
+"tool.error.fileNotFound" = "File not found: %@ (create it with file_write first)";
+"tool.error.readFailed" = "Read failed: %@";
+"tool.error.searchNotFound" = "search block not found in file. Verify indentation/newlines match exactly, or use file_read to view current content.";
+"tool.error.searchAmbiguous" = "search block matched %d times. Add more context lines to make it unique.";
+"tool.error.internalReplace" = "Replace failed";
+"tool.error.writeFailed" = "Write failed: %@";
+"tool.error.truncatedArgs" = "Arguments were repaired due to stream truncation. Skipped execution to prevent data loss. Please call again with complete arguments; for large content use file_patch (smaller payload, less likely to truncate).";
+
+/* ===== Tool descriptions (sent to LLM) ===== */
+"tool.desc.fileWrite" = "Write or overwrite a file in the current session's working directory. Path is relative to the session root, e.g. \"index.html\", \"assets/style.css\".\nUsed to persist design artifacts (HTML/CSS/JS) to the filesystem; the canvas refreshes in real time.\nUse only when creating new files or when the user explicitly requests a full refactor; prefer file_patch to modify existing files and save tokens.";
+"tool.desc.fileWrite.path" = "Relative path, e.g. index.html";
+"tool.desc.fileWrite.content" = "UTF-8 text content";
+"tool.desc.filePatch" = "Locally replace part of an existing file's content (SEARCH/REPLACE). Prefer this tool for modifying existing files; it greatly saves tokens and speeds up response.\nPass the original text to find as `search` and the new content as `replace`; the tool locates `search` in the file and replaces it with `replace`.\n`search` must match uniquely (0 or multiple matches will fail; add more context lines to make it unique).\nAn empty `replace` string deletes the `search` block.";
+"tool.desc.filePatch.path" = "Relative path, e.g. index.html";
+"tool.desc.filePatch.search" = "Original text to find and replace; must be an exact snippet from the file (including indentation/newlines) and unique";
+"tool.desc.filePatch.replace" = "New content; empty string deletes the search block";
+"tool.desc.fileRead" = "Read a file from the session's working directory, returning UTF-8 text content.";
+"tool.desc.fileRead.path" = "Relative path";
+"tool.desc.fileList" = "List all files in the session's working directory (including subdirectories), returning a JSON array.";
+"tool.desc.fileRemove" = "Delete a file.";
+"tool.desc.fileRemove.path" = "Relative path";
+"tool.desc.fileMkdir" = "Create a subdirectory (supports nested paths).";
+"tool.desc.fileMkdir.path" = "Relative path";

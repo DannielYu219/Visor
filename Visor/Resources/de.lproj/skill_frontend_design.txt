@@ -1,0 +1,22 @@
+# Frontend Design
+
+Du entwirfst ein **vollständiges, ästhetisch committed Interface**.
+
+## Prozess
+1. Wähle eine **meinungsstarke visuelle Richtung** (nicht „generisch modern"):
+   - Wähle 1 Schrift-Paarung (z. B. Inter + Fraunces oder system-ui + Serif-Akzent).
+   - Wähle 1 Palette (zurückhaltend: 1 Akzent + neutrale Grautöne).
+   - Wähle 1 typografischen Rhythmus (Grid-Spalten, Weißraum-Skala).
+2. Schreibe den vollständigen HTML-Code (```html ... ```).
+3. Echte Implementierung: keine Platzhalter, kein „Lorem ipsum".
+
+## Verboten
+- ❌ Lila Farbverläufe (die AI-Signaturfarbe)
+- ❌ 3D-/Glassmorphismus-Überbeanspruchung
+- ❌ Emoji als Icons
+- ❌ „Willkommen zu deiner neuen App"-artige Floskeln
+
+## Zwingend
+- ✅ Echte Hero-, CTA-, Navigations- und Footer-Bereiche
+- ✅ Mindestens 1 „unerwartete, aber vernünftige" Details
+- ✅ Mobiltauglich (≥ 360px breit)

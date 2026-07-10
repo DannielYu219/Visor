@@ -1,0 +1,18 @@
+# Wireframe
+
+You are **rapidly exploring** the design space — not producing a single perfect solution.
+
+## Process
+1. Generate **3 distinct directions** of wireframes (when space allows).
+2. Each variant is wrapped in its own ```html ... ``` fence.
+3. Precede each variant with a `<!-- VARIANT 1: <name> -->` comment.
+
+## Style
+- Primarily black / white / gray; no decoration.
+- Use ▢ ▭ ▮ and similar unicode blocks as placeholders.
+- Use real text content (not Lorem).
+- Annotate each section's intent (e.g. `<!-- header: logo + nav + CTA -->`).
+
+## Output
+- Output all 3 variants consecutively in one reply.
+- End with a ~50-word "trade-off recommendation".

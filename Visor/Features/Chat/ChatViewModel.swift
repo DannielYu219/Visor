@@ -218,12 +218,12 @@ final class ChatViewModel {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
             guard let content = try? String(contentsOf: url, encoding: .utf8) else {
-                await MainActor.run { errorMessage = "无法读取文件（可能不是 UTF-8 文本）" }
+                await MainActor.run { errorMessage = "chatvm.error.readFile".l }
                 return
             }
 
             guard content.utf8.count < 1_000_000 else {
-                await MainActor.run { errorMessage = "文件过大（>1MB），请选择更小的文件" }
+                await MainActor.run { errorMessage = "chatvm.error.fileTooLarge".l }
                 return
             }
 
@@ -235,10 +235,10 @@ final class ChatViewModel {
                 FileSystemNotifier.shared.notify(sessionId: sid, path: filename, kind: .write, switchTo: isHTML)
 
                 await MainActor.run {
-                    DebugBus.shared.cli("✓ 已导入文件：\(filename) (\(content.utf8.count)B)")
+                    DebugBus.shared.cli("chatvm.imported".l(filename, content.utf8.count))
                 }
             } catch {
-                await MainActor.run { errorMessage = "文件写入失败：\(error.localizedDescription)" }
+                await MainActor.run { errorMessage = "chatvm.error.write".l(error.localizedDescription) }
             }
         }
     }
@@ -397,7 +397,7 @@ final class ChatViewModel {
                     messages.remove(at: idx)
                 }
             }
-            let toolMsg = ChatMessage(role: "assistant", content: "🔧 正在调用工具：\(name)…")
+            let toolMsg = ChatMessage(role: "assistant", content: "chat.tool.calling".l(name))
             messages.append(toolMsg)
             DebugBus.shared.cli("⚙ 工具调用开始：\(name)")
 
@@ -421,7 +421,7 @@ final class ChatViewModel {
                     return "[]"
                 }()
                 let names = tcs.map { $0.function.name }.joined(separator: ", ")
-                let toolMsg = ChatMessage(role: "assistant", content: "🔧 调用工具：\(names)", toolCallBody: body)
+                let toolMsg = ChatMessage(role: "assistant", content: "chat.tool.called".l(names), toolCallBody: body)
                 messages.append(toolMsg)
                 persist(toolMsg)
                 DebugBus.shared.cli("⚙ 工具调用：\(names)")

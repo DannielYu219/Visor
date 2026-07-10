@@ -1,0 +1,1 @@
+[System hint] First tell the user in 1-2 sentences what you plan to do, then call the tools.

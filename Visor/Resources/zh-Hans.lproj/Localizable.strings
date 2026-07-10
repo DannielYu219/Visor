@@ -1,0 +1,233 @@
+/* Visor — 简体中文 */
+
+/* ===== 通用 ===== */
+"common.done" = "完成";
+"common.cancel" = "取消";
+"common.save" = "保存";
+"common.delete" = "删除";
+"common.edit" = "编辑";
+"common.add" = "添加";
+"common.export" = "导出";
+"common.ok" = "好";
+"common.retry" = "重试";
+"common.later" = "稍后";
+
+/* ===== 语言 ===== */
+"lang.system" = "跟随系统";
+"settings.language.title" = "应用语言";
+"settings.language.subtitle" = "切换后立即生效，无需重启";
+"settings.language.restart.hint" = "若界面未刷新，请重启应用";
+
+/* ===== 设置页 ===== */
+"settings.title" = "设置";
+"settings.apikey.title" = "OpenRouter API Key";
+"settings.apikey.placeholder" = "API Key";
+"settings.apikey.show" = "显示 API Key";
+"settings.apikey.hide" = "隐藏 API Key";
+"settings.apikey.save" = "保存到 Keychain";
+"settings.apikey.clear" = "清除已保存的 Key";
+"settings.apikey.saved" = "已保存";
+"settings.apikey.empty" = "API Key 不能为空";
+
+"settings.customProvider.title" = "自定义服务商";
+"settings.customProvider.empty" = "添加 OpenAI 兼容的自定义服务商（如 OpenAI、Together、Groq 等）";
+"settings.customProvider.modelCount" = "%d 个模型";
+
+"settings.budget.title" = "预算（USD）";
+"settings.budget.session" = "会话";
+"settings.budget.daily" = "日";
+"settings.budget.monthly" = "月";
+"settings.budget.apply" = "应用预算";
+
+"settings.pricing.title" = "模型定价（实时）";
+"settings.pricing.row" = "in $%.2f / out $%.2f";
+
+/* ===== 自定义服务商编辑器 ===== */
+"provider.editor.section.info" = "服务商信息";
+"provider.editor.name" = "名称";
+"provider.editor.name.placeholder" = "如：我的 OpenAI";
+"provider.editor.baseURL" = "Base URL";
+"provider.editor.baseURL.hint" = "OpenAI 兼容格式，需包含 /v1 路径";
+"provider.editor.apiKey.title" = "API Key";
+"provider.editor.apiKey.existing" = "已配置 API Key（留空则保持不变）";
+"provider.editor.apiKey.placeholder" = "API Key";
+"provider.editor.test" = "测试连接";
+"provider.editor.testing" = "测试中…";
+"provider.editor.test.success" = "✓ 已连接，%d 个模型";
+"provider.editor.test.failure" = "✗ %@";
+"provider.editor.test.baseURLInvalid" = "Base URL 无效";
+"provider.editor.test.apiKeyMissing" = "请先输入 API Key";
+"provider.editor.test.responseInvalid" = "响应格式异常";
+"provider.editor.test.apiKeyInvalid" = "API Key 无效（%d）";
+"provider.editor.test.httpError" = "HTTP %d: %@";
+"provider.editor.deepseek.title" = "DeepSeek 思考模式";
+"provider.editor.deepseek.intensity" = "思考强度";
+"provider.editor.deepseek.hint" = "高 — 适用于普通任务；最大 — 适用于复杂 Agent 任务";
+"provider.editor.models.title" = "模型列表";
+"provider.editor.models.add" = "添加模型";
+"provider.editor.models.empty" = "至少添加一个模型";
+"provider.editor.model.idPlaceholder" = "模型 ID（如 deepseek-v4-pro）";
+"provider.editor.model.displayName" = "显示名称";
+"provider.editor.model.supportsVision" = "支持图片输入";
+"provider.editor.title.new" = "添加自定义服务商";
+"provider.editor.title.edit" = "编辑服务商";
+"provider.editor.error.nameRequired" = "请填写服务商名称";
+"provider.editor.error.urlInvalid" = "Base URL 无效";
+"provider.editor.error.modelIdLikeURL" = "模型 ID「%@」看起来像 URL，请填写模型名称（如 deepseek-v4-pro）";
+"provider.editor.error.noValidModels" = "至少添加一个有效的模型（需填写 ID 和显示名称）";
+
+/* DeepSeek 思考强度 */
+"deepseek.mode.disabled" = "关闭";
+"deepseek.mode.high" = "高";
+"deepseek.mode.max" = "最大";
+
+/* ===== 聊天视图 ===== */
+"chat.empty.hint" = "试试输入「做一个 pitch deck」或「设计一个登录页」";
+"chat.modelPicker" = "选择模型";
+"chat.skillRouted" = "已路由到 %@";
+"chat.token.in" = "in %d";
+"chat.token.out" = "out %d";
+"chat.error.stream" = "流式响应异常：%@";
+"chat.error.fsInit" = "文件系统初始化失败：%@";
+"chat.error.modelError" = "模型返回 finish_reason=error";
+"chat.tool.calling" = "🔧 正在调用工具：%@…";
+"chat.tool.called" = "🔧 调用工具：%@";
+
+/* ComposerBar */
+"composer.placeholder" = "输入消息…";
+"composer.send" = "发送消息";
+"composer.stop" = "停止生成";
+"composer.attach" = "添加附件";
+"composer.attach.photo" = "照片";
+"composer.attach.file" = "文件";
+"composer.processingImage" = "处理图片…";
+"composer.error.pickFile" = "文件选取失败：%@";
+"composer.error.imageLoad" = "图片加载失败";
+"composer.error.imageFormat" = "图片格式无效";
+"composer.error.imageEncode" = "图片编码失败";
+"composer.error.imageTooLarge" = "图片过大（>4MB），请选择更小的图片";
+"composer.error.tooManyImages" = "最多 %d 张图片";
+"composer.error.visionUnsupported" = "当前模型不支持图片输入，请切换到 GPT-4o / Gemini Flash / Claude Haiku";
+
+/* ===== 侧边栏 ===== */
+"sidebar.title" = "会话";
+"sidebar.new" = "新建会话";
+"sidebar.delete" = "删除会话";
+"sidebar.newSession.defaultTitle" = "新会话";
+
+/* ===== 根视图 / 空状态 ===== */
+"root.empty.apiKey.title" = "请先配置 OpenRouter API Key";
+"root.empty.apiKey.subtitle" = "在设置中粘贴您的 API Key 即可开始设计";
+"root.empty.apiKey.action" = "前往设置";
+"root.placeholder.noSession" = "未选择会话";
+"root.placeholder.noCanvas" = "暂无画布";
+
+/* ===== 画布 ===== */
+"canvas.title" = "设计画布";
+"canvas.empty.title" = "画布为空";
+"canvas.empty.hint" = "在下方聊天框输入设计需求";
+"canvas.toolbar.fileManager" = "文件管理";
+"canvas.toolbar.refresh" = "刷新画布";
+"canvas.toolbar.toggleSource" = "显示 / 隐藏源代码";
+"canvas.toolbar.export" = "导出 HTML";
+"canvas.toolbar.settings" = "画布设置";
+"canvas.settings.title" = "画布渲染设置";
+"canvas.settings.previewSize" = "当前预览: %d × %d";
+"canvas.settings.fillHint" = "填满画布，尺寸随窗口自适应";
+"canvas.settings.width" = "预览宽度 (px，0 = 填满)";
+"canvas.settings.height" = "预览高度 (px，0 = 填满)";
+"canvas.settings.radius" = "圆角 (pt，最大 %d)";
+"canvas.settings.reset" = "复位 — 填满画布";
+"canvas.settings.placeholder" = "填满";
+"canvas.source.empty" = "（无内容）";
+"canvas.export.empty" = "画布为空，无内容可导出";
+"canvas.export.failed" = "导出失败：%@";
+"canvas.import.success" = "✓ 已导入：%@";
+"canvas.import.failed" = "导入失败：%@";
+"canvas.error.readFile" = "无法读取文件（可能不是 UTF-8 文本）";
+"canvas.error.fileTooLarge" = "文件过大（>1MB）";
+
+/* ===== 文件管理 Sheet ===== */
+"fileManager.title" = "文件管理";
+"fileManager.empty.title" = "暂无文件";
+"fileManager.empty.hint" = "点击下方「+ 从文件」上传文件";
+"fileManager.import" = "从文件";
+"fileManager.imported" = "已导入：%@";
+"fileManager.error.pick" = "文件选取失败：%@";
+"fileManager.error.read" = "读取失败：%@";
+"fileManager.error.delete" = "删除失败：%@";
+"fileManager.error.export" = "导出失败：%@";
+"fileManager.deleted" = "已删除：%@";
+"fileManager.preview" = "预览 %@：\n%@…";
+
+/* ===== Debug ===== */
+"debug.tab.terminal" = "终端";
+"debug.tab.token" = "Token";
+"debug.tab.error" = "错误";
+"debug.empty.terminal" = "等待 CLI 输出…";
+"debug.empty.token" = "等待 token 统计…";
+"debug.empty.error" = "暂无错误";
+"debug.action.clear" = "清空";
+"debug.action.copyAll" = "复制全部";
+
+/* ===== CostMeter ===== */
+"cost.title" = "费用概览";
+"cost.session" = "本次会话";
+"cost.daily" = "今日";
+"cost.monthly" = "本月";
+
+/* ===== MessageBubble ===== */
+"message.reasoning.title" = "思考过程";
+"message.image.decodeFailed" = "图片解码失败";
+
+/* ===== ChatViewModel 错误 ===== */
+"chatvm.error.readFile" = "无法读取文件（可能不是 UTF-8 文本）";
+"chatvm.error.fileTooLarge" = "文件过大（>1MB），请选择更小的文件";
+"chatvm.imported" = "✓ 已导入文件：%@ (%d B)";
+"chatvm.error.write" = "文件写入失败：%@";
+
+/* ===== Skill 显示名 ===== */
+"skill.frontendDesign" = "界面设计";
+"skill.openDesign" = "Open Design";
+"skill.makeADeck" = "Slide 演示";
+"skill.wireframe" = "线框图";
+
+/* ===== Keychain 错误 ===== */
+"keychain.error.unhandled" = "Keychain 错误（OSStatus %d）";
+"keychain.error.dataConversion" = "Keychain 数据转换失败";
+"keychain.error.notFound" = "Keychain 未找到对应项";
+
+/* ===== 文件系统错误 ===== */
+"fs.error.pathTraversal" = "路径越权：%@";
+
+/* ===== 文件上下文（AgentRuntime 注入） ===== */
+"fileContext.empty" = "空";
+"fileContext.readFailed" = "读取失败：%@";
+
+/* ===== 工具结果（CLI / 函数调用） ===== */
+"tool.error.unknown" = "工具不存在：%@";
+"tool.error.pathEmpty" = "path 不能为空";
+"tool.error.searchEmpty" = "search 不能为空（如需清空整个文件请用 file_write）";
+"tool.error.fileNotFound" = "文件不存在：%@（请先用 file_write 创建）";
+"tool.error.readFailed" = "读取失败：%@";
+"tool.error.searchNotFound" = "search 块在文件中未找到匹配。请确认缩进/换行是否完全一致，或先用 file_read 查看当前内容。";
+"tool.error.searchAmbiguous" = "search 块在文件中匹配了 %d 次。请在 search 中补充更多上下文行使其唯一。";
+"tool.error.internalReplace" = "替换失败";
+"tool.error.writeFailed" = "写入失败：%@";
+"tool.error.truncatedArgs" = "参数因流式截断被修复，为防止误删/写入空内容已跳过执行。请重新调用并确保参数完整；若内容较大请用 file_patch 做局部替换（payload 更小不易截断）。";
+
+/* ===== 工具描述（发送给 LLM） ===== */
+"tool.desc.fileWrite" = "写入或覆盖一个文件到当前 session 的工作目录。路径相对于 session 根，例如 \"index.html\"、\"assets/style.css\"。\n用于把设计稿（HTML/CSS/JS）落到文件系统，画布会实时刷新预览。\n仅在新建文件或用户强烈要求重构整个文件时使用；修改已有文件请优先用 file_patch 节约 token。";
+"tool.desc.fileWrite.path" = "相对路径，例如 index.html";
+"tool.desc.fileWrite.content" = "UTF-8 文本内容";
+"tool.desc.filePatch" = "局部替换修改已有文件的部分内容（SEARCH/REPLACE）。优先使用此工具修改已存在的文件，可极大节约 token 并提升速度。\n传入要查找的原文 search 与替换后的内容 replace，工具会在文件中精确定位 search 并替换为 replace。\n要求 search 在文件中唯一匹配（0 匹配或多次匹配都会失败，请补充更多上下文行使其唯一）。\nreplace 为空字符串表示删除 search 块。";
+"tool.desc.filePatch.path" = "相对路径，例如 index.html";
+"tool.desc.filePatch.search" = "要查找并替换的原文，必须是文件中的精确片段（含缩进/换行），且在文件中唯一";
+"tool.desc.filePatch.replace" = "替换后的内容；传空串表示删除 search 块";
+"tool.desc.fileRead" = "读取 session 工作目录中的一个文件，返回 UTF-8 文本内容。";
+"tool.desc.fileRead.path" = "相对路径";
+"tool.desc.fileList" = "列出 session 工作目录中的所有文件（含子目录），返回 JSON 数组。";
+"tool.desc.fileRemove" = "删除一个文件。";
+"tool.desc.fileRemove.path" = "相对路径";
+"tool.desc.fileMkdir" = "创建子目录（支持嵌套路径）。";
+"tool.desc.fileMkdir.path" = "相对路径";

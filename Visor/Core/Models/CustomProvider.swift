@@ -25,9 +25,9 @@ enum DeepSeekThinkingMode: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .disabled: return "关闭"
-        case .high:     return "高"
-        case .max:      return "最大"
+        case .disabled: return "deepseek.mode.disabled".l
+        case .high:     return "deepseek.mode.high".l
+        case .max:      return "deepseek.mode.max".l
         }
     }
 
