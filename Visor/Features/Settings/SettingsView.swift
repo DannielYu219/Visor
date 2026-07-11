@@ -22,6 +22,9 @@ struct SettingsView: View {
     // 语言
     @ObservedObject private var languageManager = LanguageManager.shared
 
+    // 实验性功能
+    @State private var tasteSkillEnabled: Bool = UserDefaults.standard.bool(forKey: "experimental_taste_skill")
+
     enum SaveStatus: Equatable {
         case idle
         case saved
@@ -207,6 +210,46 @@ struct SettingsView: View {
                                 Divider().opacity(0.1)
                             }
                         }
+                    }
+                    .padding(DesignTokens.Spacing.xxl)
+                    .background(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .fill(Color.visorBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignTokens.Radius.l, style: .continuous)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.04), radius: 16, y: 4)
+
+                    // 实验性功能卡片
+                    VStack(alignment: .leading, spacing: DesignTokens.Spacing.m) {
+                        Text("settings.experimental.title".l)
+                            .font(.visorTitle)
+                        Text("settings.experimental.subtitle".l)
+                            .font(.visorCaption)
+                            .foregroundStyle(.secondary)
+
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("settings.experimental.tasteSkill.name".l)
+                                    .font(.visorBody)
+                                Text("settings.experimental.tasteSkill.desc".l)
+                                    .font(.visorCaption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: $tasteSkillEnabled)
+                                .labelsHidden()
+                                .onChange(of: tasteSkillEnabled) { _, newValue in
+                                    UserDefaults.standard.set(newValue, forKey: "experimental_taste_skill")
+                                }
+                        }
+                        .padding(DesignTokens.Spacing.s)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignTokens.Radius.s, style: .continuous)
+                                .fill(Color.visorTertiaryBackground)
+                        )
                     }
                     .padding(DesignTokens.Spacing.xxl)
                     .background(

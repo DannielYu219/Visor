@@ -39,8 +39,12 @@
 "settings.budget.monthly" = "Monthly";
 "settings.budget.apply" = "Apply Budget";
 
-"settings.pricing.title" = "Model Pricing (Live)";
+"settings.pricing.title" = "Model Pricing (live)";
 "settings.pricing.row" = "in $%.2f / out $%.2f";
+"settings.experimental.title" = "Experimental Features";
+"settings.experimental.subtitle" = "These features are experimental and may affect output quality or increase token usage.";
+"settings.experimental.tasteSkill.name" = "Taste Skill Aesthetic Enhancement";
+"settings.experimental.tasteSkill.desc" = "Injects anti-slop design rules to improve typography, color, and layout aesthetics of generated pages.";
 
 /* ===== Custom Provider Editor ===== */
 "provider.editor.section.info" = "Provider Info";

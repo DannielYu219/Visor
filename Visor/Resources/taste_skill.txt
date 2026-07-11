@@ -1,0 +1,272 @@
+# Taste Skill: Anti-Slop Frontend Design Rules
+
+> Adapted from taste-skill by Leonxlnx (MIT License) for Visor's single-HTML-artifact context.
+> Every rule below is contextual. First read the brief, then pull only what fits.
+
+---
+
+## 0. BRIEF INFERENCE
+
+Before writing code, infer what the user actually wants. Read these signals:
+1. Page kind - landing / portfolio / redesign / editorial / slide / wireframe
+2. Vibe words - "minimalist", "calm", "premium", "brutalist", "playful", "editorial"
+3. Audience - B2B / consumer / recruiter / creative
+4. Quiet constraints - accessibility-first, regulated, trust-first
+
+Output a one-line "Design Read" before generating:
+"Reading this as: <page kind> for <audience>, with a <vibe> language, leaning toward <aesthetic family>."
+
+If the brief is ambiguous, ask ONE clarifying question. If you can confidently infer, declare the read and proceed.
+
+### Anti-Default Discipline
+Do NOT default to: AI-purple gradients, centered hero over dark mesh, three equal feature cards, generic glassmorphism everywhere, Inter + slate-900. These are LLM defaults. Reach past them.
+
+---
+
+## 1. THREE DIALS
+
+Set three dials after the design read. Every layout, motion, and density decision is gated by these.
+
+- DESIGN_VARIANCE: 8 (1 = perfect symmetry, 10 = artsy chaos)
+- MOTION_INTENSITY: 6 (1 = static, 10 = cinematic physics)
+- VISUAL_DENSITY: 4 (1 = airy gallery, 10 = packed cockpit)
+
+Baseline: 8 / 6 / 4. Override conversationally based on the brief.
+
+### Dial Inference
+| Signal | VARIANCE | MOTION | DENSITY |
+|---|---|---|---|
+| minimalist / clean / calm / editorial | 5-6 | 3-4 | 2-3 |
+| premium consumer / Apple-y / luxury | 7-8 | 5-7 | 3-4 |
+| playful / wild / Awwwards / experimental | 9-10 | 8-10 | 3-4 |
+| landing / portfolio / marketing (default) | 7-9 | 6-8 | 3-5 |
+| trust-first / public-sector / regulated | 3-4 | 2-3 | 4-5 |
+
+---
+
+## 2. TYPOGRAPHY
+
+- Display headlines: large scale, tight tracking, controlled hierarchy via weight + color, not just raw scale.
+- Body: readable line-height, max-width ~65ch for paragraphs.
+- Sans font choice:
+  - DISCOURAGED as default: Inter. Pick Geist, Outfit, Cabinet Grotesk, Satoshi, or a brand-appropriate serif first.
+  - Override: Inter acceptable when user explicitly asks for neutral / Linear-style feel.
+- SERIF DISCIPLINE (very discouraged as default):
+  - Serif is only acceptable when the brand brief literally names a serif, OR the aesthetic is genuinely editorial / luxury / publication.
+  - Specifically BANNED as defaults: Fraunces, Instrument_Serif.
+  - For everything else (agency, studio, modern brand, premium consumer, portfolio), default sans-serif display.
+- EMPHASIS RULE: use italic or bold of the SAME font. Do NOT inject a random serif word into a sans headline.
+- ITALIC DESCENDER CLEARANCE: when italic display type has descender letters (y g j p q), use leading 1.1+ minimum. Audit every italic word.
+
+---
+
+## 3. COLOR
+
+- Max 1 accent color. Saturation under 80% by default.
+- THE LILA RULE: AI purple/blue glow aesthetic is discouraged. No automatic purple button glows, no random neon gradients. Use neutral bases (zinc/slate/stone) with high-contrast singular accents (emerald, electric blue, deep rose, burnt orange).
+- Override: if brand explicitly asks for purple, embrace it with intent: consistent palette, harmonised neutrals, restrained gradients.
+- One palette per project. Do not fluctuate between warm and cool grays.
+- COLOR CONSISTENCY LOCK: once an accent is chosen, use it on the WHOLE page. A warm-grey site does not get a blue CTA in section 7.
+- PREMIUM-CONSUMER PALETTE BAN: for premium-consumer briefs (cookware, wellness, artisan, luxury), the default beige+brass+oxblood+espresso palette is BANNED. Rotate alternatives: cold luxury (silver+chrome), forest (green+bone+amber), black and tan, cobalt+cream, terracotta+slate, pure monochrome + one saturated pop.
+- No pure #000000 or pure #ffffff. Use off-black (zinc-950) and off-white.
+
+---
+
+## 4. LAYOUT DISCIPLINE (Hard Rules)
+
+- Hero MUST fit in the initial viewport. Headline max 2 lines, subtext max 20 words and 3-4 lines, CTAs visible without scroll.
+- HERO TOP PADDING CAP: max ~6rem at desktop. More than that reads as a layout bug.
+- HERO STACK DISCIPLINE: max 4 text elements (eyebrow OR brand strip, headline, subtext, CTAs). No tiny tagline below CTAs, no trust micro-strip in hero, no feature bullet list in hero.
+- "Used by" logo wall belongs UNDER the hero, never inside it.
+- ANTI-CENTER BIAS: centered hero avoided when DESIGN_VARIANCE > 4. Force split-screen, left-aligned content, or asymmetric white-space.
+- NO 3-column equal feature cards. The generic "three identical cards horizontally" is banned. Use 2-column zig-zag, asymmetric grid, or horizontal-scroll.
+- Navigation MUST render on a single line at desktop. Height max 80px.
+- Bento grids MUST have rhythm. Vary composition: alternate full-width rows, asymmetric tile sizes, vertical breaks. N items = N cells, no empty cells.
+- Section-Layout-Repetition Ban: once you use a layout family for a section, it can appear at most ONCE on the page. A page with 8 sections must use at least 4 different layout families.
+- ZIGZAG ALTERNATION CAP: max 2 consecutive sections with left-image/right-text pattern. The 3rd is a Pre-Flight Fail.
+- EYEBROW RESTRAINT: maximum 1 eyebrow per 3 sections. Hero counts as 1. Instead of an eyebrow, drop it entirely - the headline alone is enough.
+- SPLIT-HEADER BAN: "left big headline + right small explainer paragraph" as a section header is banned. Stack vertically.
+- Bento Background Diversity: at least 2-3 cells need real visual variation (image, gradient, pattern), not all white-on-white text cards.
+- SHAPE CONSISTENCY LOCK: pick ONE corner-radius scale for the page. All-sharp, all-soft (12-16px), or all-pill. Mixed without a documented rule is broken design.
+- Mobile collapse must be explicit for every multi-column layout. Declare the <768px fallback.
+
+---
+
+## 5. INTERACTIVE UI STATES
+
+Always implement full cycles:
+- Loading: skeletal loaders matching final layout shape. Avoid generic spinners.
+- Empty States: beautifully composed; indicate how to populate.
+- Error States: clear, inline for forms, toasts for transient.
+- Tactile Feedback: on :active, use slight translate or scale to simulate push.
+- BUTTON CONTRAST CHECK: verify button text is readable against background. WCAG AA min 4.5:1. No white-on-white.
+- CTA BUTTON WRAP BAN: button text MUST fit on one line at desktop. Shorten label (3 words max for primary CTAs) or widen button.
+- NO DUPLICATE CTA INTENT: two CTAs with same intent on one page is a Fail. "Get in touch" + "Contact us" + "Let's talk" = pick ONE.
+- FORM CONTRAST CHECK: inputs, placeholders, focus rings, labels all pass WCAG AA.
+
+---
+
+## 6. CONTENT DENSITY
+
+- Default per section: short headline (max 8 words) + short sub-paragraph (max 25 words) + one visual OR one CTA.
+- No data-dump sections. Top 3-5 highlights + "View full list" link.
+- Long lists need a different UI component, not a longer list. Use card grid, tabs, accordion, carousel, or marquee for >5 items.
+- COPY SELF-AUDIT: re-read every visible string before shipping. Flag grammatically broken, unclear referents, AI-hallucination phrases, mock-poetic micro-meta. Rewrite every flagged string.
+- Fake-precise numbers are banned unless from real data or explicitly labeled as mock.
+- One copy register per page. Do not mix technical mono, editorial prose, and marketing punch.
+
+---
+
+## 7. QUOTES AND TESTIMONIALS
+
+- Max 3 lines of quote body. If longer, cut it.
+- Attribution: name + role + optionally company. Never name only.
+- Use real typographic quotes or none. Not straight ASCII.
+- No em-dashes inside quote text.
+
+---
+
+## 8. PAGE THEME LOCK
+
+- The page has ONE theme. Sections do not invert.
+- If dark mode, ALL sections are dark. No light-mode section sandwiched between dark sections.
+- Default: pick light, dark, or auto at the page level and lock it.
+- Respect prefers-color-scheme. Design for both modes from the start.
+
+---
+
+## 9. IMAGE AND VISUAL ASSET STRATEGY
+
+Landing pages are visual products. Text-only pages with fake-screenshot divs are slop.
+
+Priority order:
+1. Image-generation tool first. Generate section-specific assets at the right aspect ratio.
+2. Real web images: use https://picsum.photos/seed/{descriptive-seed}/{w}/{h} for placeholder photography.
+3. Last resort: leave clearly-labeled placeholder slots and tell the user.
+
+Real company logos for social proof: use Simple Icons CDN (https://cdn.simpleicons.org/{slug}/ffffff) or generate SVG monogram marks. Do NOT use plain text wordmarks. Logo wall = logos only, no industry/category labels below.
+
+Hand-rolled decorative SVGs strongly discouraged. Div-based fake screenshots (fake task lists, fake dashboards) are BANNED. Hero needs a real visual - text + gradient blob is not a hero.
+
+---
+
+## 10. MOTION AND INTERACTION
+
+- Motion must be motivated. Before adding animation, ask "what does this communicate?" Valid: hierarchy, storytelling, feedback, state transition. Invalid: "it looked cool".
+- MARQUEE MAX-ONE-PER-PAGE: horizontal scrolling text marquees at most once per page.
+- Animate ONLY transform and opacity. Never animate top, left, width, height.
+- Use will-change sparingly.
+- Reduced Motion (mandatory): any motion above MOTION_INTENSITY 3 MUST honor prefers-reduced-motion. Gate animations behind @media (prefers-reduced-motion: no-preference) or provide override.
+- No window.addEventListener('scroll'). Use IntersectionObserver, CSS scroll-driven animations, or requestAnimationFrame with care.
+- Perpetual micro-interactions (pulse, typewriter, float, shimmer): use sparingly, not on every card. Apply spring physics, no linear easing.
+- Motion claimed = motion shown. If MOTION_INTENSITY > 4, the page must actually move. If you cannot ship working motion, drop the dial to 3.
+
+---
+
+## 11. AI TELLS (Forbidden Patterns)
+
+### Visual and CSS
+- NO neon/outer glows by default. Use inner borders or subtle tinted shadows.
+- NO pure black (#000000). Use off-black.
+- NO oversaturated accents. Desaturate to blend with neutrals.
+- NO excessive gradient text for large headers.
+- NO custom mouse cursors.
+
+### Typography
+- AVOID Inter as default.
+- NO oversized H1s that just scream. Control hierarchy with weight + color.
+- NO em-dash anywhere. Em-dash is COMPLETELY banned in headlines, eyebrows, pills, body, quotes, attribution, captions, buttons, alt text. Use period, comma, parentheses, colon, or regular hyphen. This is non-negotiable.
+
+### Layout and Spacing
+- NO 3-column equal feature cards.
+- NO version labels in hero (V0.6, BETA, INVITE-ONLY) unless brief is a launch.
+- NO section-number eyebrows (00 / INDEX, 001 Capabilities).
+- NO decorative colored status dots on every list/nav/badge.
+- NO em-dash as design element.
+- NO br-broken-and-italicized headlines as default "design move".
+- NO vertical rotated text (agency-portfolio cliche).
+- NO crosshair/hairline grid lines as decoration.
+
+### Fake Product Previews
+- NO div-based fake product UI in hero (fake task list, fake terminal, fake dashboard).
+- NO fake version footers inside fake screenshots.
+
+### Marketing Copy Tells
+- NO "Quietly in use at" / "Quietly trusted by" headers. Use "Trusted by" or skip.
+- NO "From the field" / "Field notes" / "Currently on the bench" poetic labels.
+- NO weather/locale strips ("LIS 14:23 18C") unless brief is place-focused.
+- NO micro-meta-sentences under eyebrows.
+- NO generic step labels ("Stage 1 / Stage 2"). Use verb-noun directly.
+- NO pills/labels overlaid on images.
+- NO photo-credit captions as decoration.
+- NO version footers on marketing pages.
+- NO decoration text strip at hero bottom ("BRAND. MOTION. SPATIAL.").
+- NO floating top-right sub-text in section headings.
+- NO scoring/progress bars with filled background tracks.
+- NO scroll cues ("Scroll", "scroll to explore").
+- NO border-t + border-b on every row of long lists.
+- NO "Jane Doe" generic names. Use creative, realistic, locale-appropriate names.
+- NO fake-perfect numbers (99.99%, 50%). Use organic, messy data.
+- NO startup-slop brand names (Acme, Nexus, SmartFlow, Cloudly).
+- NO filler verbs (Elevate, Seamless, Unleash, Next-Gen, Revolutionize).
+
+### Em-Dash Ban
+Em-dash is COMPLETELY banned. Zero em-dashes on the page. If output contains a single em-dash anywhere visible, the output fails. Use regular hyphen for ranges, periods for sentence breaks, commas for clauses.
+
+---
+
+## 12. PRE-FLIGHT CHECK
+
+Run this matrix before outputting code. If any box fails, the output is not done.
+
+- Brief inference declared (one-liner)?
+- Dial values explicit and reasoned from brief?
+- ZERO em-dashes anywhere on the page?
+- Page Theme Lock: ONE theme for the whole page?
+- Color Consistency Lock: one accent color across all sections?
+- Shape Consistency Lock: one corner-radius system?
+- Button Contrast Check: every CTA readable against background?
+- CTA Button Wrap: no label wraps to 2+ lines at desktop?
+- No Duplicate CTA Intent: no two CTAs with same intent?
+- Serif discipline: if serif used, NOT Fraunces or Instrument_Serif?
+- Italic descender clearance: every italic word with y g j p q has leading 1.1+?
+- Hero fits viewport: headline max 2 lines, subtext max 20 words, CTA visible without scroll?
+- Hero top padding: max ~6rem at desktop?
+- Hero stack discipline: max 4 text elements?
+- Eyebrow count: max 1 per 3 sections?
+- No Split-Header pattern?
+- Zigzag alternation: no 3+ consecutive same pattern?
+- Logo wall under hero, not inside it, uses real SVG logos?
+- Bento has rhythm AND exact cell count (no empty cells)?
+- Bento background diversity: at least 2-3 cells have visual variation?
+- Copy Self-Audit: no broken or AI-hallucinated phrases?
+- Motion motivated: every animation justified in one sentence?
+- Marquee max-one-per-page?
+- Navigation on ONE line at desktop, height max 80px?
+- Section-Layout-Repetition: no two sections share same layout family?
+- Long lists use the right UI component (not default ul with divide-y for >5 items)?
+- Real images used (gen-tool, then picsum-seed, then placeholder slots)?
+- No div-based fake screenshots?
+- No pills/labels overlaid on images?
+- No photo-credit captions as decoration?
+- No version footers on marketing pages?
+- No micro-meta-sentences under eyebrows?
+- No decoration text strip at hero bottom?
+- No locale/time/weather strips unless brief is place-focused?
+- No scroll cues?
+- No version labels in hero?
+- No section-numbering eyebrows?
+- No decorative dots?
+- No border-t + border-b on every row of long lists?
+- Content density sane: no 20-row data tables, max 25-word sub-paragraphs?
+- Quotes max 3 lines, attribution clean (no em-dash)?
+- Motion claimed = motion shown?
+- Reduced motion honored for MOTION_INTENSITY > 3?
+- Dark mode tokens defined and tested in both modes?
+- Mobile collapse explicit for high-variance layouts?
+- Viewport stability: min-h-100dvh, never h-screen?
+- Empty/loading/error states provided?
+- Cards omitted in favor of spacing where possible?
+- No AI Tells from Section 11?
+
+If a single checkbox cannot be honestly ticked, the page is not done. Fix it before delivering.

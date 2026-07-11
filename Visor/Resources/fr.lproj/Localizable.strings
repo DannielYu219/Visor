@@ -41,6 +41,10 @@
 
 "settings.pricing.title" = "Tarifs des modèles (en direct)";
 "settings.pricing.row" = "entrée $%.2f / sortie $%.2f";
+"settings.experimental.title" = "Fonctionnalités expérimentales";
+"settings.experimental.subtitle" = "Ces fonctionnalités sont expérimentales et peuvent affecter la qualité de sortie ou augmenter la consommation de tokens.";
+"settings.experimental.tasteSkill.name" = "Taste Skill Amélioration esthétique";
+"settings.experimental.tasteSkill.desc" = "Injecte des règles de design anti-slop pour améliorer la typographie, les couleurs et l'esthétique de layout des pages générées.";
 
 /* ===== Éditeur de fournisseur ===== */
 "provider.editor.section.info" = "Infos fournisseur";

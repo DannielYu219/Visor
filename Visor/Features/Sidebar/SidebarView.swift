@@ -14,7 +14,6 @@ struct SidebarView: View {
     @State private var isImporting: Bool = false
     // 导出相关状态
     @State private var isExporting: Bool = false
-    @State private var shareItem: URLWrapper?
     // 提示
     @State private var toast: String?
 
@@ -61,10 +60,6 @@ struct SidebarView: View {
             case .failure(let err):
                 toast = "sidebar.import.error".l(err.localizedDescription)
             }
-        }
-        .sheet(item: $shareItem) { wrapper in
-            ShareSheetView(url: wrapper.url)
-                .presentationDetents([.medium])
         }
     }
 
@@ -202,7 +197,7 @@ struct SidebarView: View {
 
         do {
             let url = try await VisorProjectCodec.export(sessionId: sid, context: context)
-            shareItem = URLWrapper(url: url)
+            presentShareSheet(url: url)
             toast = "sidebar.export.success".l(session.title)
         } catch {
             toast = "sidebar.export.error".l(error.localizedDescription)
@@ -237,33 +232,17 @@ struct SidebarView: View {
     }
 }
 
-// MARK: - Share Sheet 包装
+// MARK: - Share Sheet
 
-/// 包装 URL 使其符合 Identifiable（用于 sheet(item:)）
-private struct URLWrapper: Identifiable {
-    let url: URL
-    var id: String { url.absoluteString }
-}
-
-/// UIActivityViewController 的 SwiftUI 包装
-private struct ShareSheetView: UIViewRepresentable {
-    let url: URL
-
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        DispatchQueue.main.async {
-            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                  let root = scene.windows.first?.rootViewController else { return }
-            let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-            if let pop = activityVC.popoverPresentationController {
-                pop.sourceView = root.view
-                pop.sourceRect = CGRect(x: root.view.bounds.midX, y: root.view.bounds.midY, width: 0, height: 0)
-                pop.permittedArrowDirections = []
-            }
-            root.present(activityVC, animated: true)
-        }
-        return view
+/// 直接从 rootVC present UIActivityViewController，不通过 SwiftUI sheet 包装（避免空白）
+private func presentShareSheet(url: URL) {
+    guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+          let root = scene.windows.first?.rootViewController else { return }
+    let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    if let pop = activityVC.popoverPresentationController {
+        pop.sourceView = root.view
+        pop.sourceRect = CGRect(x: root.view.bounds.midX, y: root.view.bounds.midY, width: 0, height: 0)
+        pop.permittedArrowDirections = []
     }
-
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    root.present(activityVC, animated: true)
 }

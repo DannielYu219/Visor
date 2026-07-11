@@ -41,6 +41,10 @@
 
 "settings.pricing.title" = "模型定价（实时）";
 "settings.pricing.row" = "in $%.2f / out $%.2f";
+"settings.experimental.title" = "实验性功能";
+"settings.experimental.subtitle" = "这些功能正在试验阶段，可能影响输出质量或增加 token 消耗。";
+"settings.experimental.tasteSkill.name" = "Taste Skill 审美增强";
+"settings.experimental.tasteSkill.desc" = "注入反 AI 套路的设计规则，提升生成页面的排版、配色与布局审美。";
 
 /* ===== 自定义服务商编辑器 ===== */
 "provider.editor.section.info" = "服务商信息";

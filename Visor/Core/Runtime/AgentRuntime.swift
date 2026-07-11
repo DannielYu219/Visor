@@ -131,7 +131,13 @@ final class AgentRuntime: @unchecked Sendable {
         let fileContextFragment = fileContextTemplate.replacingOccurrences(of: "{FILES}", with: fileContext)
 
         let visorCLIFragment = PromptLocalizer.text(named: "visor_cli")
-        let combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLIFragment + fileContextFragment
+        var combinedSystemPrompt = routed.systemPrompt + "\n\n---\n\n" + visorCLIFragment + fileContextFragment
+
+        // 实验性功能：注入 taste-skill 提示词以提升 Agent 审美
+        if UserDefaults.standard.bool(forKey: "experimental_taste_skill") {
+            let tasteSkillFragment = PromptLocalizer.text(named: "taste_skill")
+            combinedSystemPrompt += "\n\n---\n\n" + tasteSkillFragment
+        }
         let agentHint = PromptLocalizer.text(named: "agent_user_hint")
         let userMsgWithHint = userInput + "\n\n" + agentHint
         var messages: [Message] = [.system(combinedSystemPrompt)]

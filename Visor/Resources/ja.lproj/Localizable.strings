@@ -41,6 +41,10 @@
 
 "settings.pricing.title" = "模型単価（即時）";
 "settings.pricing.row" = "入力 $%.2f / 出力 $%.2f";
+"settings.experimental.title" = "実験的機能";
+"settings.experimental.subtitle" = "これらの機能は実験段階であり、出力品質やトークン消費に影響する可能性があります。";
+"settings.experimental.tasteSkill.name" = "Taste Skill 審美強化";
+"settings.experimental.tasteSkill.desc" = "AI 陳腐化を防ぐデザインルールを注入し、生成ページのタイポグラフィ・配色・レイアウト審美を向上させます。";
 
 /* ===== 独自提供者編集器 ===== */
 "provider.editor.section.info" = "提供者情報";

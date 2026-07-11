@@ -41,6 +41,10 @@
 
 "settings.pricing.title" = "Modellpreise (Live)";
 "settings.pricing.row" = "Eingabe $%.2f / Ausgabe $%.2f";
+"settings.experimental.title" = "Experimentelle Funktionen";
+"settings.experimental.subtitle" = "Diese Funktionen sind experimentell und können die Ausgabequalität oder den Token-Verbrauch beeinflussen.";
+"settings.experimental.tasteSkill.name" = "Taste Skill Ästhetik-Enhancement";
+"settings.experimental.tasteSkill.desc" = "Injiziert Anti-Slop-Designregeln zur Verbesserung der Typografie, Farbe und Layoutästhetik generierter Seiten.";
 
 /* ===== Anbieter-Editor ===== */
 "provider.editor.section.info" = "Anbieterinfo";
