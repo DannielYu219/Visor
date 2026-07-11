@@ -114,6 +114,15 @@
 "sidebar.new" = "新建会话";
 "sidebar.delete" = "删除会话";
 "sidebar.newSession.defaultTitle" = "新会话";
+"sidebar.import" = "导入会话项目";
+"sidebar.export" = "导出会话";
+"sidebar.exporting" = "导出中…";
+"sidebar.importing" = "导入中…";
+"sidebar.export.success" = "✓ 已导出：%@";
+"sidebar.export.error" = "导出失败：%@";
+"sidebar.import.success" = "✓ 已导入会话";
+"sidebar.import.error" = "导入失败：%@";
+"sidebar.import.badExtension" = "请选择 .visor 或 .zip 文件";
 
 /* ===== 根视图 / 空状态 ===== */
 "root.empty.apiKey.title" = "请先配置 OpenRouter API Key";

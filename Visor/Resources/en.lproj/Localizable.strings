@@ -114,6 +114,15 @@
 "sidebar.new" = "New session";
 "sidebar.delete" = "Delete session";
 "sidebar.newSession.defaultTitle" = "New session";
+"sidebar.import" = "Import project";
+"sidebar.export" = "Export session";
+"sidebar.exporting" = "Exporting…";
+"sidebar.importing" = "Importing…";
+"sidebar.export.success" = "✓ Exported: %@";
+"sidebar.export.error" = "Export failed: %@";
+"sidebar.import.success" = "✓ Session imported";
+"sidebar.import.error" = "Import failed: %@";
+"sidebar.import.badExtension" = "Please select a .visor or .zip file";
 
 /* ===== Root / Empty states ===== */
 "root.empty.apiKey.title" = "Configure OpenRouter API Key first";

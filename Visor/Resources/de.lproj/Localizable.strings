@@ -114,6 +114,15 @@
 "sidebar.new" = "Neue Sitzung";
 "sidebar.delete" = "Sitzung löschen";
 "sidebar.newSession.defaultTitle" = "Neue Sitzung";
+"sidebar.import" = "Projekt importieren";
+"sidebar.export" = "Sitzung exportieren";
+"sidebar.exporting" = "Exportieren…";
+"sidebar.importing" = "Importieren…";
+"sidebar.export.success" = "✓ Exportiert: %@";
+"sidebar.export.error" = "Export fehlgeschlagen: %@";
+"sidebar.import.success" = "✓ Sitzung importiert";
+"sidebar.import.error" = "Import fehlgeschlagen: %@";
+"sidebar.import.badExtension" = "Bitte .visor- oder .zip-Datei wählen";
 
 /* ===== Root / Leerzustände ===== */
 "root.empty.apiKey.title" = "Bitte zuerst OpenRouter API-Key konfigurieren";

@@ -114,6 +114,15 @@
 "sidebar.new" = "新規対話";
 "sidebar.delete" = "対話を削除";
 "sidebar.newSession.defaultTitle" = "新規対話";
+"sidebar.import" = "プロジェクトをインポート";
+"sidebar.export" = "対話を書き出し";
+"sidebar.exporting" = "書き出し中…";
+"sidebar.importing" = "インポート中…";
+"sidebar.export.success" = "✓ 書き出しました：%@";
+"sidebar.export.error" = "書き出し失敗：%@";
+"sidebar.import.success" = "✓ 対話をインポートしました";
+"sidebar.import.error" = "インポート失敗：%@";
+"sidebar.import.badExtension" = ".visor または .zip ファイルを選択してください";
 
 /* ===== 根画面 / 空状態 ===== */
 "root.empty.apiKey.title" = "先ず OpenRouter API 鍵を設定して下さい";

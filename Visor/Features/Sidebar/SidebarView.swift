@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 /// 会话侧边栏（左栏）：可折叠的会话列表
 struct SidebarView: View {
@@ -7,6 +8,15 @@ struct SidebarView: View {
     @Query(sort: \SessionEntity.updatedAt, order: .reverse) private var sessions: [SessionEntity]
     @Binding var selectedSessionId: UUID?
     @Binding var isCollapsed: Bool
+
+    // 导入相关状态
+    @State private var showImportPicker: Bool = false
+    @State private var isImporting: Bool = false
+    // 导出相关状态
+    @State private var isExporting: Bool = false
+    @State private var shareItem: URLWrapper?
+    // 提示
+    @State private var toast: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,6 +26,46 @@ struct SidebarView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.visorSecondaryBackground)
+        .overlay(alignment: .top) {
+            if let toast = toast {
+                Text(toast)
+                    .font(.visorCaption)
+                    .padding(.horizontal, DesignTokens.Spacing.l)
+                    .padding(.vertical, DesignTokens.Spacing.s)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.top, DesignTokens.Spacing.s)
+                    .transition(.opacity)
+                    .task(id: toast) {
+                        try? await Task.sleep(nanoseconds: 2_500_000_000)
+                        await MainActor.run { self.toast = nil }
+                    }
+            }
+        }
+        .overlay {
+            if isImporting || isExporting {
+                ProgressView(isImporting ? "sidebar.importing".l : "sidebar.exporting".l)
+                    .padding(DesignTokens.Spacing.xxl)
+                    .glassBackground()
+            }
+        }
+        .fileImporter(
+            isPresented: $showImportPicker,
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    Task { await importProject(from: url) }
+                }
+            case .failure(let err):
+                toast = "sidebar.import.error".l(err.localizedDescription)
+            }
+        }
+        .sheet(item: $shareItem) { wrapper in
+            ShareSheetView(url: wrapper.url)
+                .presentationDetents([.medium])
+        }
     }
 
     private var header: some View {
@@ -26,6 +76,15 @@ struct SidebarView: View {
                     .padding(.leading, DesignTokens.Spacing.l)
             }
             Spacer()
+            CircularGlassButton(
+                systemName: "square.and.arrow.down.on.square",
+                iconSize: DesignTokens.Touch.icon,
+                size: DesignTokens.Touch.standard,
+                action: { showImportPicker = true }
+            )
+            .accessibilityLabel("sidebar.import".l)
+            .padding(.trailing, DesignTokens.Spacing.s)
+
             CircularGlassButton(
                 systemName: "plus",
                 iconSize: DesignTokens.Touch.icon,
@@ -89,6 +148,11 @@ struct SidebarView: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
+            Button {
+                Task { await exportSession(session) }
+            } label: {
+                Label("sidebar.export".l, systemImage: "square.and.arrow.up")
+            }
             Button(role: .destructive) {
                 deleteSession(session)
             } label: {
@@ -127,4 +191,79 @@ struct SidebarView: View {
         try? context.save()
         selectedSessionId = new.id
     }
+
+    // MARK: - 导出
+
+    @MainActor
+    private func exportSession(_ session: SessionEntity) async {
+        let sid = session.id
+        isExporting = true
+        defer { isExporting = false }
+
+        do {
+            let url = try await VisorProjectCodec.export(sessionId: sid, context: context)
+            shareItem = URLWrapper(url: url)
+            toast = "sidebar.export.success".l(session.title)
+        } catch {
+            toast = "sidebar.export.error".l(error.localizedDescription)
+        }
+    }
+
+    // MARK: - 导入
+
+    @MainActor
+    private func importProject(from url: URL) async {
+        // 校验扩展名
+        let ext = url.pathExtension.lowercased()
+        guard ext == VisorProjectCodec.fileExtension || ext == "zip" else {
+            toast = "sidebar.import.badExtension".l
+            return
+        }
+
+        isImporting = true
+        defer { isImporting = false }
+
+        do {
+            _ = try await VisorProjectCodec.importProject(
+                from: url,
+                context: context
+            ) { newId in
+                selectedSessionId = newId
+            }
+            toast = "sidebar.import.success".l
+        } catch {
+            toast = "sidebar.import.error".l(error.localizedDescription)
+        }
+    }
+}
+
+// MARK: - Share Sheet 包装
+
+/// 包装 URL 使其符合 Identifiable（用于 sheet(item:)）
+private struct URLWrapper: Identifiable {
+    let url: URL
+    var id: String { url.absoluteString }
+}
+
+/// UIActivityViewController 的 SwiftUI 包装
+private struct ShareSheetView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        DispatchQueue.main.async {
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let root = scene.windows.first?.rootViewController else { return }
+            let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+            if let pop = activityVC.popoverPresentationController {
+                pop.sourceView = root.view
+                pop.sourceRect = CGRect(x: root.view.bounds.midX, y: root.view.bounds.midY, width: 0, height: 0)
+                pop.permittedArrowDirections = []
+            }
+            root.present(activityVC, animated: true)
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
 }
